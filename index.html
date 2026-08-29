@@ -435,6 +435,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
   position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center;
   background: var(--field); padding: 20px;
 }
+.auth-overlay[hidden] { display: none; }
 .auth-card {
   width: 100%; max-width: 380px; background: var(--paper-raised); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 32px 28px; box-shadow: var(--shadow); text-align: center;
@@ -517,6 +518,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <button type="submit" class="btn" id="team-picker-submit">That's Me</button>
     </form>
     <div class="form-status" id="team-picker-status"></div>
+    <button type="button" class="btn ghost" id="team-gate-back-btn" style="margin-top:10px;">Not you? Sign in with a different email</button>
   </div>
 </div>
 
@@ -2407,27 +2409,64 @@ document.getElementById('team-picker-form').addEventListener('submit', async (e)
   const submitBtn = document.getElementById('team-picker-submit');
   const statusEl = document.getElementById('team-picker-status');
   const teamId = sel.value;
-  if (!teamId || !currentUser) return;
+  if (!teamId) {
+    statusEl.className = 'form-status err';
+    statusEl.textContent = 'Pick a team from the list first.';
+    return;
+  }
   submitBtn.disabled = true;
   statusEl.className = 'form-status pending';
   statusEl.textContent = 'Saving…';
-  const { error } = await supabaseClient.from('profiles').insert({
-    id: currentUser.id, email: currentUser.email, team_id: teamId, display_name: teamName(teamId),
-  });
-  submitBtn.disabled = false;
-  if (error) {
-    console.error('team-picker insert failed', error);
+  try {
+    // Don't trust a possibly-stale in-memory currentUser -- re-check the real
+    // session right now. This is what actually failed silently before: if the
+    // auth callback hadn't set currentUser yet (or it went stale), the old
+    // code just did nothing with no explanation.
+    if (!currentUser) {
+      const { data } = await supabaseClient.auth.getSession();
+      currentUser = data.session ? data.session.user : null;
+    }
+    if (!currentUser) {
+      submitBtn.disabled = false;
+      statusEl.className = 'form-status err';
+      statusEl.textContent = "You're not signed in anymore — refresh the page and sign in again.";
+      return;
+    }
+    const { error } = await supabaseClient.from('profiles').insert({
+      id: currentUser.id, email: currentUser.email, team_id: teamId, display_name: teamName(teamId),
+    });
+    submitBtn.disabled = false;
+    if (error) {
+      console.error('team-picker insert failed', error);
+      statusEl.className = 'form-status err';
+      statusEl.textContent = "Couldn't save that (" + error.message + ") — try again.";
+      return;
+    }
+    statusEl.textContent = '';
+    await loadProfile();
+  } catch (err) {
+    submitBtn.disabled = false;
+    console.error('team-picker submit threw', err);
     statusEl.className = 'form-status err';
-    statusEl.textContent = "Couldn't save that — try again.";
-    return;
+    statusEl.textContent = 'Something went wrong — refresh the page and try again.';
   }
-  statusEl.textContent = '';
-  await loadProfile();
 });
 
 document.getElementById('sign-out-btn').addEventListener('click', async () => {
   await supabaseClient.auth.signOut();
   window.location.reload();
+});
+
+document.getElementById('team-gate-back-btn').addEventListener('click', () => {
+  // Escape hatch for a stuck/expired session on the team-picker screen.
+  // Flip the UI back immediately and synchronously -- don't wait on a
+  // network call to sign out, since that could hang or fail (e.g. no
+  // connection) and leave this button looking like it does nothing.
+  currentUser = null;
+  currentProfile = null;
+  currentActingTeamId = null;
+  showAuthGate();
+  supabaseClient.auth.signOut().catch(() => {}); // best-effort cleanup, non-blocking
 });
 
 /* -------- pick 'em interactions -------- */
