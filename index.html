@@ -2312,15 +2312,23 @@ function showAuthGate() {
   setUserBadge();
 }
 
-function showTeamGate() {
-  document.getElementById('auth-gate').hidden = true;
-  const gate = document.getElementById('team-gate');
-  gate.hidden = false;
+// Fill the team-picker dropdown immediately, synchronously, at script load --
+// not lazily inside showTeamGate() -- so it can never be caught by a race
+// with the async auth callbacks that decide whether to show that gate at all.
+function populateTeamPicker() {
   const sel = document.getElementById('team-picker-select');
   if (sel && sel.options.length <= 1) {
     const opts = activeTeams().map(t => `<option value="${t.id}">${t.name}</option>`).join('');
     sel.insertAdjacentHTML('beforeend', opts);
   }
+}
+populateTeamPicker();
+
+function showTeamGate() {
+  document.getElementById('auth-gate').hidden = true;
+  const gate = document.getElementById('team-gate');
+  gate.hidden = false;
+  populateTeamPicker(); // harmless no-op if already filled above
   setUserBadge();
 }
 
