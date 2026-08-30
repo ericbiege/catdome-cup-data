@@ -1693,7 +1693,7 @@ function renderStandings() {
   picker.innerHTML = '';
   years.forEach(y => {
     const b = el('button', null, y);
-    b.dataset.nav = 'standings'; b.dataset.year = y;
+    b.dataset.nav = 'records'; b.dataset.year = y;
     b.setAttribute('aria-current', y === activeStandingsYear ? 'true' : 'false');
     picker.appendChild(b);
   });
