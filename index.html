@@ -6,7 +6,7 @@
 <title>Catdome Cup</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@600;700;800;900&family=Big+Shoulders+Display:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ============================================================
@@ -36,6 +36,7 @@
   --font-display: "Big Shoulders Display", "Arial Narrow", sans-serif;
   --font-body: "Public Sans", -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Space Mono", "SF Mono", Consolas, monospace;
+  --font-sportsbook: "Archivo Black", "Archivo", "Arial Black", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -405,6 +406,77 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .pickem-panel { display: none; }
 .pickem-panel.active { display: block; animation: fade-in 0.2s ease both; }
 
+/* ---------- Catdome Sportsbook: professional rebrand + Catpoints economy ---------- */
+.sportsbook-heading {
+  font-family: var(--font-sportsbook); font-weight: 900; letter-spacing: -0.01em;
+  font-size: 40px; text-transform: uppercase;
+}
+.odds-tag {
+  display: inline-flex; align-items: center; font-family: var(--font-mono); font-size: 13px;
+  font-weight: 700; color: var(--ink-dim); background: var(--paper-sunken); border: 1px solid var(--line);
+  border-radius: 999px; padding: 8px 12px;
+}
+
+.cp-explainer {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px;
+  background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+  margin: 18px 0 22px;
+}
+.cp-explainer-item {
+  background: var(--paper-raised); padding: 16px 14px; display: flex; flex-direction: column; gap: 4px; text-align: center;
+}
+.cp-explainer-num { font-family: var(--font-sportsbook); font-size: 26px; color: var(--gold-strong); line-height: 1; }
+.cp-explainer-lbl { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-dim); }
+
+.catpoints-chip {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: 8px;
+  background: color-mix(in srgb, var(--gold) 20%, transparent); border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  color: #fff; font-family: var(--font-mono); font-weight: 700; font-size: 13px;
+  border-radius: 999px; padding: 6px 12px; cursor: pointer; transition: background 0.15s ease;
+}
+.catpoints-chip:hover { background: color-mix(in srgb, var(--gold) 32%, transparent); }
+.catpoints-chip .cp-unit { font-size: 10px; opacity: 0.75; margin-left: 1px; letter-spacing: 0.04em; }
+@media (max-width: 640px) { .catpoints-chip { margin-left: 0; } }
+
+/* ---------- Bet slip tray ---------- */
+.slip-tray {
+  position: fixed; right: 20px; bottom: 20px; z-index: 900; width: 320px; max-width: calc(100vw - 32px);
+  background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); overflow: hidden; transition: border-color 0.15s ease;
+}
+.slip-tray.has-picks { border-color: var(--gold); }
+.slip-tray-header {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--field); color: #eef2ea; border: none; padding: 14px 16px; cursor: pointer;
+  font-family: var(--font-sportsbook); font-size: 15px; text-transform: uppercase; letter-spacing: 0.01em;
+}
+.slip-count-badge {
+  background: var(--gold); color: #fff; font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  border-radius: 999px; min-width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px;
+}
+.slip-tray-body { max-height: 0; overflow: hidden; transition: max-height 0.2s ease; }
+.slip-tray.expanded .slip-tray-body { max-height: 70vh; overflow-y: auto; }
+.slip-tray:not(.has-picks) .slip-tray-body { max-height: 0 !important; }
+#slip-body { padding: 12px 16px 4px; }
+.slip-empty { font-size: 13px; color: var(--ink-dim); padding: 10px 0 16px; }
+.slip-item { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.slip-item:last-child { border-bottom: none; }
+.slip-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.slip-item-summary { font-size: 13px; line-height: 1.35; flex: 1; }
+.slip-item-remove { background: none; border: none; color: var(--ink-dim); font-size: 18px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.slip-item-remove:hover { color: var(--crimson); }
+.slip-item-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.slip-item-odds { font-size: 12px; font-weight: 700; color: var(--gold-strong); min-width: 44px; }
+.slip-stake-prefix { font-size: 12px; color: var(--ink-dim); }
+.slip-stake-input {
+  flex: 1; min-width: 0; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--paper-sunken); color: var(--ink); font-family: var(--font-mono); font-size: 13px;
+}
+.slip-item-payout { font-size: 11px; color: var(--ink-dim); margin-top: 5px; min-height: 14px; }
+.slip-tray-footer { padding: 12px 16px 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px; }
+.slip-tray-totals { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-dim); }
+.slip-tray-footer .btn { width: 100%; }
+
 .futures-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-bottom: 8px; }
 .futures-tile {
   display: flex; flex-direction: column; gap: 4px; background: var(--paper-raised); border: 1px solid var(--line);
@@ -572,11 +644,14 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </a>
     <nav class="tabs" aria-label="Site sections">
       <button data-nav="home">Home</button>
-      <button data-nav="pickem">Pick &rsquo;Em</button>
+      <button data-nav="pickem">Sportsbook</button>
       <button data-nav="teams">Teams</button>
       <button data-nav="records">Records</button>
       <button data-nav="recaps">Recaps</button>
     </nav>
+    <button type="button" class="catpoints-chip" id="catpoints-chip" data-nav="pickem" hidden title="Your Catpoints balance">
+      <span id="catpoints-balance-value">0</span><span class="cp-unit">CP</span>
+    </button>
     <div class="user-badge" id="user-badge" hidden>
       <span class="team" id="user-badge-team"></span>
       <button type="button" id="sign-out-btn">Sign out</button>
@@ -620,21 +695,29 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     <div class="section-head">
       <div>
         <div class="eyebrow">The Gambling Cave</div>
-        <h2>Pick &rsquo;Em</h2>
-        <div class="desc">Pick your bets and challenge your league mates.</div>
+        <h2 class="sportsbook-heading">Catdome Sportsbook</h2>
+        <div class="desc">Every manager starts the season with 200 Catpoints. Win bets, win games, or work the waiver wire and trade market to build your bankroll &mdash; then put it on the line against the book. No cash, no cash-outs, all bragging rights.</div>
       </div>
     </div>
 
-    <div class="pickem-tabs" role="tablist" aria-label="Pick 'Em sections">
+    <div class="cp-explainer">
+      <div class="cp-explainer-item"><span class="cp-explainer-num">200</span><span class="cp-explainer-lbl">Starting Catpoints</span></div>
+      <div class="cp-explainer-item"><span class="cp-explainer-num">+5</span><span class="cp-explainer-lbl">Per waiver claim</span></div>
+      <div class="cp-explainer-item"><span class="cp-explainer-num">+25</span><span class="cp-explainer-lbl">Per trade made</span></div>
+      <div class="cp-explainer-item"><span class="cp-explainer-num">&infin;</span><span class="cp-explainer-lbl">Ways to lose it to the book</span></div>
+    </div>
+
+    <div class="pickem-tabs" role="tablist" aria-label="Sportsbook sections">
       <button type="button" class="pickem-tab-btn" data-pickem-tab="week" aria-current="true">This Week</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="futures" aria-current="false">Futures</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="props" aria-current="false">Props &amp; Parlay</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="mybets" aria-current="false">My Bets</button>
+      <button type="button" class="pickem-tab-btn" data-pickem-tab="book" aria-current="false" hidden>The Book</button>
     </div>
 
     <div class="pickem-panel active" data-pickem-panel="week">
       <div class="yardline" data-label="Weekly Showdown"></div>
-      <div class="desc" style="margin-bottom:14px;">Call your shot against another team this week. Build the bet, then send the challenge.</div>
+      <div class="desc" style="margin-bottom:14px;">Stake Catpoints against the book on this week's matchup.</div>
       <div class="card bet-builder" id="weekly-builder">
         <div class="row2">
           <div>
@@ -651,14 +734,14 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
           <div class="bet-type-tiles" id="weekly-bet-type-tiles" role="group" aria-labelledby="weekly-bet-type-label">
             <button type="button" class="bet-type-tile active" data-value="over"><span class="btt-label">Over 218</span><span class="btt-sub">Combined score tops 218</span></button>
             <button type="button" class="bet-type-tile" data-value="under"><span class="btt-label">Under 218</span><span class="btt-sub">Combined score stays under</span></button>
-            <button type="button" class="bet-type-tile" data-value="straight"><span class="btt-label">Straight Up</span><span class="btt-sub">Pick the winner</span></button>
-            <button type="button" class="bet-type-tile" data-value="margin"><span class="btt-label">Margin 21+</span><span class="btt-sub">Win by more than 21</span></button>
+            <button type="button" class="bet-type-tile" data-value="straight"><span class="btt-label">Straight Up</span><span class="btt-sub">Your team wins</span></button>
+            <button type="button" class="bet-type-tile" data-value="margin"><span class="btt-label">Margin 21+</span><span class="btt-sub">Your team wins by 21+</span></button>
           </div>
           <select id="weekly-bet-type" class="sr-only-select" aria-hidden="true" tabindex="-1">
             <option value="over">Over 218 Total Points &mdash; combined score goes over 218</option>
             <option value="under">Under 218 Total Points &mdash; combined score stays under 218</option>
-            <option value="straight">Straight-Up Winner &mdash; who wins the matchup</option>
-            <option value="margin">Margin Bet &mdash; win by more than 21</option>
+            <option value="straight">Straight-Up Winner &mdash; your team wins the matchup</option>
+            <option value="margin">Margin Bet &mdash; your team wins by more than 21</option>
           </select>
         </div>
         <div style="max-width:140px;">
@@ -667,14 +750,14 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
         <div class="bet-preview" id="weekly-preview"></div>
         <div class="bet-actions">
-          <button class="btn ghost" type="button" id="weekly-place">Place Bet</button>
-          <button class="btn" type="button" id="weekly-share">Share Bet</button>
+          <span class="odds-tag mono">-110</span>
+          <button class="btn" type="button" id="weekly-place">Add to Slip</button>
           <div class="form-status" id="weekly-status"></div>
         </div>
       </div>
 
       <div class="yardline" data-label="Waiver Wire Wizard"></div>
-      <div class="desc" style="margin-bottom:14px;">Call your free-agent pickup against theirs. Whoever's add scores more fantasy points that week wins the bet.</div>
+      <div class="desc" style="margin-bottom:14px;">Stake Catpoints on your free-agent pickup against theirs.</div>
       <div class="card bet-builder" id="waiver-builder">
         <div class="row2">
           <div>
@@ -702,14 +785,13 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
         <div class="bet-preview" id="waiver-preview"></div>
         <div class="bet-actions">
-          <button class="btn ghost" type="button" id="waiver-place">Place Bet</button>
-          <button class="btn" type="button" id="waiver-share">Share Bet</button>
+          <button class="btn" type="button" id="waiver-place">Add to Slip</button>
           <div class="form-status" id="waiver-status"></div>
         </div>
       </div>
 
       <div class="yardline" data-label="Trade Deadline Chaos"></div>
-      <div class="desc" style="margin-bottom:14px;">Call whether a trade between two teams happens before a deadline week. Pure speculation, fully bettable.</div>
+      <div class="desc" style="margin-bottom:14px;">Stake Catpoints on whether a trade happens before a deadline week.</div>
       <div class="card bet-builder" id="trade-builder">
         <div class="row2">
           <div>
@@ -736,14 +818,13 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
         <div class="bet-preview" id="trade-preview"></div>
         <div class="bet-actions">
-          <button class="btn ghost" type="button" id="trade-place">Place Bet</button>
-          <button class="btn" type="button" id="trade-share">Share Bet</button>
+          <button class="btn" type="button" id="trade-place">Add to Slip</button>
           <div class="form-status" id="trade-status"></div>
         </div>
       </div>
 
       <div class="yardline" data-label="Bench Points Bowl"></div>
-      <div class="desc" style="margin-bottom:14px;">Whoever leaves more points stranded on their bench that week loses and buys the trash talk rights.</div>
+      <div class="desc" style="margin-bottom:14px;">Stake Catpoints that your team strands FEWER points on the bench than theirs this week.</div>
       <div class="card bet-builder" id="bench-builder">
         <div class="row2">
           <div>
@@ -761,21 +842,21 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
         <div class="bet-preview" id="bench-preview"></div>
         <div class="bet-actions">
-          <button class="btn ghost" type="button" id="bench-place">Place Bet</button>
-          <button class="btn" type="button" id="bench-share">Share Bet</button>
+          <button class="btn" type="button" id="bench-place">Add to Slip</button>
           <div class="form-status" id="bench-status"></div>
         </div>
       </div>
 
       <div class="yardline" data-label="More Ways To Bet"></div>
       <div class="idea-grid">
+        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>NFL Game Lines</h4><div class="desc" style="font-size:13px;">Head-to-head, yards, and TD props on real NFL games each week &mdash; same Catpoints, same book.</div></div>
         <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Bust Alert</h4><div class="desc" style="font-size:13px;">Name a start you think busts before kickoff. Right, and you get the receipts forever.</div></div>
       </div>
     </div>
 
     <div class="pickem-panel" data-pickem-panel="futures">
       <div class="yardline" data-label="Futures &middot; Top 3 Finish"></div>
-      <div class="desc" style="margin-bottom:14px;">Odds are generated from each team's actual top-3 finish rate across every completed Catdome Cup season &mdash; not Vegas math, just history repeating itself. Or not. <b>Pick Now! Futures Close Week 1.</b></div>
+      <div class="desc" style="margin-bottom:14px;">Odds are generated from each team's actual top-3 finish rate across every completed Catdome Cup season &mdash; not Vegas math, just history repeating itself. Or not. <b>Futures close Week 1.</b></div>
       <div class="futures-grid" id="futures-top3-board"></div>
 
       <div class="yardline" data-label="Futures &middot; Toilet Bowl Watch"></div>
@@ -815,8 +896,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
             </div>
             <div class="bet-preview" id="prop-preview"></div>
             <div class="bet-actions">
-              <button class="btn ghost" type="button" id="prop-place">Place Bet</button>
-              <button class="btn" type="button" id="prop-share">Share Bet</button>
+              <button class="btn" type="button" id="prop-place">Add to Slip</button>
               <div class="form-status" id="prop-status"></div>
             </div>
           </div>
@@ -824,7 +904,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
 
         <div>
           <div class="yardline" data-label="Anytime TD Parlay"></div>
-          <div class="desc" style="margin-bottom:14px;">Stack 2&ndash;4 players you think all find the end zone the same week. Bragging-rights units only, no book required.</div>
+          <div class="desc" style="margin-bottom:14px;">Stack 2&ndash;4 players you think all find the end zone the same week. Bigger parlay, bigger multiplier on your stake.</div>
           <div class="card bet-builder" id="parlay-builder">
             <div id="parlay-legs">
               <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
@@ -840,8 +920,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
             </div>
             <div class="bet-preview" id="parlay-preview"></div>
             <div class="bet-actions">
-              <button class="btn ghost" type="button" id="parlay-place">Place Bet</button>
-              <button class="btn" type="button" id="parlay-share">Share Bet</button>
+              <button class="btn" type="button" id="parlay-place">Add to Slip</button>
               <div class="form-status" id="parlay-status"></div>
             </div>
           </div>
@@ -850,11 +929,58 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-panel" data-pickem-panel="mybets">
-      <div class="yardline" data-label="Build Your Bets"></div>
-      <div class="desc" style="margin-bottom:14px;">Place or share a bet and it lands here first. Give it a look, then hit Confirm (or Accept a challenge) to lock it in &mdash; once it's official, find it on your team page.</div>
+      <div class="yardline" data-label="My Wagers"></div>
+      <div class="desc" style="margin-bottom:14px;">Every bet you've staked against the book, open or settled. Balances update automatically once a week's final.</div>
       <div id="build-your-bets-list"></div>
     </div>
+
+    <div class="pickem-panel" data-pickem-panel="book">
+      <div class="yardline" data-label="Issue Catpoints"></div>
+      <div class="desc" style="margin-bottom:14px;">You're the book &mdash; credit a team's balance for a waiver claim, a trade, a promo, or a correction.</div>
+      <div class="card bet-builder" id="book-issue-builder">
+        <div class="row2">
+          <div>
+            <label for="book-issue-team">Team</label>
+            <select id="book-issue-team"></select>
+          </div>
+          <div>
+            <label for="book-issue-amount">Amount (CP)</label>
+            <input type="number" id="book-issue-amount" step="1" placeholder="e.g. 5">
+          </div>
+        </div>
+        <div>
+          <label for="book-issue-note">Note</label>
+          <input type="text" id="book-issue-note" placeholder="e.g. Waiver claim, Week 3">
+        </div>
+        <div class="bet-actions">
+          <button class="btn" type="button" id="book-issue-submit">Issue Catpoints</button>
+          <div class="form-status" id="book-issue-status"></div>
+        </div>
+      </div>
+
+      <div class="yardline" data-label="Needs Your Attention"></div>
+      <div class="desc" style="margin-bottom:14px;">Bets the auto-grader can't settle on its own &mdash; waiver, trade, parlay, and futures wagers, plus anything flagged for review.</div>
+      <div id="book-settle-list"></div>
+    </div>
   </section>
+
+  <div class="slip-tray" id="slip-tray">
+    <button type="button" class="slip-tray-header" id="slip-tray-toggle">
+      <span class="slip-tray-title">Bet Slip</span>
+      <span class="slip-count-badge" id="slip-count">0</span>
+    </button>
+    <div class="slip-tray-body">
+      <div id="slip-body"><div class="slip-empty">Tap &ldquo;Add to Slip&rdquo; on any bet to build your ticket.</div></div>
+      <div class="slip-tray-footer">
+        <div class="slip-tray-totals">
+          <span>Total stake: <b class="mono" id="slip-total-stake">0</b> CP</span>
+          <span>Balance: <b class="mono" id="slip-balance-value">0</b> CP</span>
+        </div>
+        <div class="form-status" id="slip-status"></div>
+        <button class="btn" type="button" id="slip-place-btn">Place Bet(s)</button>
+      </div>
+    </div>
+  </div>
 
   <section class="view" id="view-teams">
     <div class="section-head">
@@ -1343,7 +1469,7 @@ function renderFuturesBoard(elId, kind) {
       <div class="ft-team">${r.team.name}</div>
       <div class="ft-odds ${r.odds < 0 ? 'fav' : 'dog'}">${formatOdds(r.odds)}</div>
       <div class="ft-meta">${r.hits} of ${r.seasons} seasons &middot; ${pct(r.seasons ? r.hits / r.seasons : 0)}</div>
-      <button class="ft-bet-btn place-futures-btn" type="button" data-team="${r.team.name}" data-team-id="${r.team.id}" data-odds="${formatOdds(r.odds)}" data-market="${marketLabel}" data-rate="${r.hits} of ${r.seasons} seasons">Place Bet</button>
+      <button class="ft-bet-btn place-futures-btn" type="button" data-team="${r.team.name}" data-team-id="${r.team.id}" data-odds="${formatOdds(r.odds)}" data-raw-odds="${r.odds}" data-market="${marketLabel}" data-rate="${r.hits} of ${r.seasons} seasons">Add to Slip</button>
     </div>`).join('');
 }
 
@@ -1451,16 +1577,29 @@ function updateBenchPreview() {
   if (el) el.textContent = buildBenchText();
 }
 
-const BET_STATUS_LABELS = { draft: 'Draft', open: 'Open', pending: 'Awaiting Accept', settled: 'Settled', declined: 'Declined' };
-const BET_STATUS_BADGE = { draft: 'sacko', open: 'champ', pending: 'sacko', settled: 'reg', declined: 'reg' };
+const BET_STATUS_LABELS = { open: 'Open', settled: 'Settled' };
+const BET_STATUS_BADGE = { open: 'champ', settled: 'reg' };
 
-// Bets a manager is still reviewing before confirming -- local to this browser tab only,
-// intentionally never published, so "Build Your Bets" stays a short working list instead
-// of growing into a permanent archive (that lives on each team's page instead).
-let draftBets = [];
+// Only you can issue Catpoints out of nowhere or settle a bet the auto-grader can't
+// reach -- gated client-side by your login email (the database enforces the "issue"
+// half for real via RLS; see catpoints_schema.sql).
+const ADMIN_EMAIL = 'eric@ericbiege.com';
+function isAdmin() { return !!(currentUser && currentUser.email === ADMIN_EMAIL); }
+
+const HOUSE_ODDS = -110; // flat "juice" used for every Catdome-internal market except Futures
+function americanOddsPayout(stake, odds) {
+  stake = Number(stake) || 0;
+  odds = Number(odds) || 0;
+  if (odds < 0) return stake * (1 + 100 / Math.abs(odds));
+  if (odds > 0) return stake * (1 + odds / 100);
+  return stake;
+}
+function formatCatpoints(n) {
+  const v = Math.round((Number(n) || 0) * 10) / 10;
+  return v % 1 === 0 ? v.toFixed(0) : v.toFixed(1);
+}
 
 function makeBetId() { return 'b' + Date.now() + Math.random().toString(36).slice(2, 7); }
-function acceptLink(betId) { return `${location.origin}${location.pathname}#/pickem/accept/${betId}`; }
 
 // Real identity now comes from Supabase Auth: currentUser is the logged-in
 // auth session, currentProfile is that user's row in `profiles` (links them
@@ -1497,79 +1636,195 @@ function showToast(msg) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-function renderBuildYourBets() {
-  const wrap = document.getElementById('build-your-bets-list');
-  if (!wrap) return;
-  const pending = (LEAGUE_DATA.bets || []).filter(b => b.status === 'pending');
-  const items = [...draftBets, ...pending].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || String(b.id).localeCompare(String(a.id)));
-  if (!items.length) {
-    wrap.innerHTML = '<div class="recap-empty">Nothing to review right now &mdash; place or share a bet below and it\'ll land here until it\'s confirmed or accepted.</div>';
+// ---- Catpoints balances -------------------------------------------------
+const CATPOINTS_BALANCES = new Map(); // team_id -> balance
+
+async function loadCatpoints() {
+  const { data, error } = await supabaseClient.from('catpoints_balances').select('*');
+  if (error) { console.error('loadCatpoints failed', error); return; }
+  CATPOINTS_BALANCES.clear();
+  for (const row of data || []) CATPOINTS_BALANCES.set(row.team_id, Number(row.balance) || 0);
+  renderCatpointsChip();
+  updateSlipTotal();
+}
+
+function subscribeCatpoints() {
+  supabaseClient.channel('catpoints-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'catpoints_balances' }, () => { loadCatpoints(); })
+    .subscribe();
+}
+
+function renderCatpointsChip() {
+  const chip = document.getElementById('catpoints-chip');
+  const valueEl = document.getElementById('catpoints-balance-value');
+  if (!chip || !valueEl) return;
+  if (!currentActingTeamId) { chip.hidden = true; return; }
+  chip.hidden = false;
+  valueEl.textContent = formatCatpoints(CATPOINTS_BALANCES.get(currentActingTeamId) || 0);
+}
+
+// ---- The bet slip ---------------------------------------------------------
+// A manager's picks before they're staked for real. Local to this browser tab --
+// nothing hits Supabase until "Place Bet(s)".
+let slip = [];
+
+function addToSlip(item) {
+  if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
+  item.localId = makeBetId();
+  if (item.odds == null && !item.payoutMultiplier) item.odds = HOUSE_ODDS;
+  slip.push(item);
+  renderSlip();
+  showToast('Added to bet slip');
+}
+function removeFromSlip(localId) {
+  slip = slip.filter(i => i.localId !== localId);
+  renderSlip();
+}
+function slipOddsLabel(item) {
+  return item.payoutMultiplier ? `${item.payoutMultiplier}x` : formatOdds(item.odds);
+}
+function slipPayoutFor(item, stake) {
+  return item.payoutMultiplier ? stake * item.payoutMultiplier : americanOddsPayout(stake, item.odds);
+}
+function renderSlip() {
+  const tray = document.getElementById('slip-tray');
+  const countEl = document.getElementById('slip-count');
+  const bodyEl = document.getElementById('slip-body');
+  if (!tray || !bodyEl || !countEl) return;
+  countEl.textContent = String(slip.length);
+  tray.classList.toggle('has-picks', slip.length > 0);
+  if (!slip.length) {
+    bodyEl.innerHTML = '<div class="slip-empty">Tap &ldquo;Add to Slip&rdquo; on any bet to build your ticket.</div>';
+    updateSlipTotal();
     return;
   }
-  wrap.innerHTML = items.map(b => {
-    const body = b.status === 'draft'
-      ? `<div class="bet-ledger-settle">
-           <button class="btn confirm-draft-btn" type="button">Confirm Bet</button>
-           <button class="btn ghost discard-draft-btn" type="button">Discard</button>
-         </div>`
-      : `<div class="bet-ledger-settle">
-           <button class="btn accept-bet-btn" type="button">Accept Challenge</button>
-           <button class="btn ghost decline-bet-btn" type="button">Decline</button>
-         </div>`;
-    const attribParts = [];
-    if (b.placedBy) attribParts.push(`Placed by ${teamName(b.placedBy)}`);
-    const attribHtml = attribParts.length ? `<div class="bet-ledger-attrib">${attribParts.join(' &middot; ')}</div>` : '';
+  bodyEl.innerHTML = slip.map(item => `
+    <div class="slip-item" data-slip-id="${item.localId}">
+      <div class="slip-item-top">
+        <div class="slip-item-summary">${item.summary}</div>
+        <button class="slip-item-remove" type="button" data-remove-slip="${item.localId}" aria-label="Remove pick">&times;</button>
+      </div>
+      <div class="slip-item-row">
+        <span class="slip-item-odds mono">${slipOddsLabel(item)}</span>
+        <span class="slip-stake-prefix mono">CP</span>
+        <input type="number" class="slip-stake-input" min="1" step="1" value="${item.lastStake || ''}" placeholder="Stake" data-slip-stake="${item.localId}">
+      </div>
+      <div class="slip-item-payout mono" data-slip-payout="${item.localId}"></div>
+    </div>
+  `).join('');
+  slip.forEach(item => updateSlipItemPayout(item.localId));
+  updateSlipTotal();
+}
+function updateSlipItemPayout(localId) {
+  const item = slip.find(i => i.localId === localId);
+  const input = document.querySelector(`[data-slip-stake="${localId}"]`);
+  const payoutEl = document.querySelector(`[data-slip-payout="${localId}"]`);
+  if (!item || !input || !payoutEl) return;
+  const stake = Number(input.value) || 0;
+  item.lastStake = input.value;
+  payoutEl.textContent = stake > 0 ? `Risk ${formatCatpoints(stake)} CP to win ${formatCatpoints(slipPayoutFor(item, stake) - stake)} CP` : '';
+  updateSlipTotal();
+}
+function updateSlipTotal() {
+  const totalEl = document.getElementById('slip-total-stake');
+  const balanceEl = document.getElementById('slip-balance-value');
+  if (!totalEl) return;
+  const total = slip.reduce((s, i) => s + (Number(i.lastStake) || 0), 0);
+  totalEl.textContent = formatCatpoints(total);
+  if (balanceEl) balanceEl.textContent = formatCatpoints(CATPOINTS_BALANCES.get(currentActingTeamId) || 0);
+}
+
+async function placeSlip() {
+  const statusEl = document.getElementById('slip-status');
+  if (!requireActingTeam(statusEl)) return;
+  if (!slip.length) return;
+  const stakes = slip.map(i => ({ item: i, stake: Number(i.lastStake) || 0 }));
+  if (stakes.some(s => s.stake <= 0)) {
+    if (statusEl) { statusEl.textContent = 'Enter a stake for every pick.'; statusEl.className = 'form-status err'; }
+    return;
+  }
+  const total = stakes.reduce((s, x) => s + x.stake, 0);
+  const balance = CATPOINTS_BALANCES.get(currentActingTeamId) || 0;
+  if (total > balance) {
+    if (statusEl) { statusEl.textContent = `You've only got ${formatCatpoints(balance)} CP.`; statusEl.className = 'form-status err'; }
+    return;
+  }
+  const placeBtn = document.getElementById('slip-place-btn');
+  if (placeBtn) placeBtn.disabled = true;
+  if (statusEl) { statusEl.textContent = ''; statusEl.className = 'form-status'; }
+  for (const { item, stake } of stakes) {
+    const payout = slipPayoutFor(item, stake);
+    const betId = makeBetId();
+    const row = {
+      id: betId, type: item.type, summary: item.summary, bet_text: item.text, status: 'open',
+      placed_by: currentActingTeamId, team_a: item.teamA || null, team_b: item.teamB || null,
+      week: item.week || null, market: item.market || null, threshold: item.threshold ?? null,
+      player_a: item.playerA || null, player_b: item.playerB || null,
+      stake, odds: item.payoutMultiplier ? null : item.odds, payout_multiplier: item.payoutMultiplier || null,
+      potential_payout: payout,
+    };
+    const { data, error } = await supabaseClient.from('bets').insert(row).select().single();
+    if (error) { console.error('placeSlip bet insert failed', error); showToast("Couldn't place one of your bets — try again."); continue; }
+    const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
+      team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', bet_id: betId, note: item.summary,
+    });
+    if (ledgerErr) console.error('stake debit failed', ledgerErr);
+    LEAGUE_DATA.bets = [...(LEAGUE_DATA.bets || []), mapBetRow(data)];
+  }
+  slip = [];
+  renderSlip();
+  if (placeBtn) placeBtn.disabled = false;
+  await loadCatpoints();
+  refreshBetViews();
+  showToast('Bet placed — good luck!');
+}
+
+function renderMyWagers() {
+  const wrap = document.getElementById('build-your-bets-list');
+  if (!wrap) return;
+  if (!currentActingTeamId) {
+    wrap.innerHTML = '<div class="recap-empty">Sign in and pick your team to see your wager history.</div>';
+    return;
+  }
+  const mine = (LEAGUE_DATA.bets || [])
+    .filter(b => b.placedBy === currentActingTeamId)
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || String(b.id).localeCompare(String(a.id)));
+  if (!mine.length) {
+    wrap.innerHTML = '<div class="recap-empty">No wagers yet &mdash; build a slip above and place your first bet.</div>';
+    return;
+  }
+  wrap.innerHTML = mine.map(b => {
+    const stakeHtml = b.stake != null
+      ? `<div class="bet-ledger-stake mono">${formatCatpoints(b.stake)} CP to win ${formatCatpoints((b.potentialPayout ?? b.stake) - b.stake)} CP</div>`
+      : '';
+    let resultHtml = '<div class="bet-ledger-result">Awaiting final score.</div>';
+    if (b.status === 'settled') {
+      const change = b.result === 'win' ? `+${formatCatpoints((b.potentialPayout ?? b.stake) - (b.stake || 0))} CP`
+        : b.result === 'push' ? 'Stake refunded' : `-${formatCatpoints(b.stake || 0)} CP`;
+      const label = b.result === 'win' ? 'Won' : b.result === 'push' ? 'Push' : 'Lost';
+      resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}</div>`;
+    } else if (b.needsReview) {
+      resultHtml = '<div class="bet-ledger-result">Flagged for the book to review.</div>';
+    }
     return `
-    <div class="card bet-ledger-row${b.id === pendingHighlightId ? ' highlight' : ''}" data-bet-id="${b.id}">
+    <div class="card bet-ledger-row" data-bet-id="${b.id}">
       <div class="bet-ledger-top">
         <span class="badge ${BET_STATUS_BADGE[b.status] || 'champ'}">${BET_STATUS_LABELS[b.status] || 'Open'}</span>
-        <div class="bet-ledger-top-right">
-          <span class="bet-ledger-date mono">${b.createdAt}</span>
-          ${b.status === 'draft' ? '' : '<button class="bet-ledger-remove" type="button" title="Remove this bet" aria-label="Remove this bet">&times;</button>'}
-        </div>
+        <span class="bet-ledger-date mono">${b.createdAt}</span>
       </div>
       <div class="bet-ledger-summary">${b.summary}</div>
-      ${attribHtml}
-      ${body}
+      ${stakeHtml}
+      ${resultHtml}
     </div>`;
   }).join('');
-  if (pendingHighlightId) {
-    const row = wrap.querySelector(`[data-bet-id="${pendingHighlightId}"]`);
-    if (row && typeof row.scrollIntoView === 'function') row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
 }
 
-function addDraft(type, summary, text, extra = {}) {
-  const draft = {
-    id: makeBetId(), type, summary, text, status: 'draft',
-    createdAt: new Date().toISOString().slice(0, 10),
-    placedBy: extra.placedBy || null, teamA: extra.teamA || null, teamB: extra.teamB || null,
-  };
-  draftBets.push(draft);
-  renderBuildYourBets();
-  return draft;
-}
-
-function discardDraft(betId) {
-  draftBets = draftBets.filter(b => b.id !== betId);
-  renderBuildYourBets();
-}
-
-async function confirmDraft(betId) {
-  const draft = draftBets.find(b => b.id === betId);
-  if (!draft) return;
-  draftBets = draftBets.filter(b => b.id !== betId);
-  await captureBet(draft.type, draft.summary, draft.text, {
-    status: 'open', presetId: draft.id, placedBy: draft.placedBy, teamA: draft.teamA, teamB: draft.teamB,
-  });
-  refreshBetViews();
-}
-
-// Bet data now surfaces in two places -- the working list on the Pick 'Em page
+// Bet data now surfaces in two places -- the working list on the Sportsbook page
 // and each team's Betting Log -- so any mutation needs to refresh whichever of
 // those is actually on screen.
 function refreshBetViews() {
-  renderBuildYourBets();
+  renderMyWagers();
+  if (isAdmin()) renderAdminPanel();
   const teamView = document.getElementById('view-team');
   if (teamView && teamView.classList.contains('active') && activeTeamId) {
     renderTeamDetail(activeTeamId);
@@ -1578,7 +1833,7 @@ function refreshBetViews() {
 
 // ---- Supabase <-> app field mapping -----------------------------------
 // The `bets` table uses snake_case columns; the rest of this app's render
-// code (renderBuildYourBets, teamBetLogRowHtml, teamBetsFor, etc) was all
+// code (renderMyWagers, teamBetLogRowHtml, teamBetsFor, etc) was all
 // written against camelCase fields, so we translate at the boundary and
 // leave that code untouched.
 function mapBetRow(row) {
@@ -1598,58 +1853,92 @@ function mapBetRow(row) {
     createdAt: row.created_at ? String(row.created_at).slice(0, 10) : null,
     acceptedAt: row.accepted_at ? String(row.accepted_at).slice(0, 10) : null,
     settledAt: row.settled_at ? String(row.settled_at).slice(0, 10) : null,
+    stake: row.stake != null ? Number(row.stake) : null,
+    odds: row.odds != null ? Number(row.odds) : null,
+    payoutMultiplier: row.payout_multiplier != null ? Number(row.payout_multiplier) : null,
+    potentialPayout: row.potential_payout != null ? Number(row.potential_payout) : null,
+    week: row.week != null ? Number(row.week) : null,
+    market: row.market || null,
+    threshold: row.threshold != null ? Number(row.threshold) : null,
+    playerA: row.player_a || null,
+    playerB: row.player_b || null,
+    settledBy: row.settled_by || null,
+    needsReview: !!row.needs_review,
   };
 }
 
-async function captureBet(type, summary, text, extra = {}) {
-  const row = {
-    id: extra.presetId || makeBetId(),
-    type, summary, bet_text: text,
-    status: extra.status || 'open',
-    placed_by: extra.placedBy || null,
-    team_a: extra.teamA || null,
-    team_b: extra.teamB || null,
-  };
-  const { data, error } = await supabaseClient.from('bets').insert(row).select().single();
+// ---- The Book: admin panel (issue Catpoints, settle what the auto-grader can't) ----
+async function issueCatpoints(teamId, amount, note) {
+  const statusEl = document.getElementById('book-issue-status');
+  if (!teamId || !amount) return;
+  const { error } = await supabaseClient.from('catpoints_ledger').insert({
+    team_id: teamId, delta: amount, reason: 'manual_issue',
+    note: note || 'Issued by the book', created_by: currentUser ? currentUser.id : null,
+  });
   if (error) {
-    console.error('captureBet failed', error);
-    showToast("Couldn't save that bet — try again.");
-    return null;
+    console.error('issueCatpoints failed', error);
+    if (statusEl) { statusEl.textContent = "Couldn't issue that -- try again."; statusEl.className = 'form-status err'; }
+    return;
   }
-  const newBet = mapBetRow(data);
-  LEAGUE_DATA.bets = [...(LEAGUE_DATA.bets || []), newBet];
-  refreshBetViews();
-  return newBet;
+  if (statusEl) { statusEl.textContent = `Issued ${formatCatpoints(amount)} CP to ${teamName(teamId)}.`; statusEl.className = 'form-status ok'; }
+  await loadCatpoints();
 }
 
-async function settleBet(betId, result, winnerTeamId) {
-  const { data, error } = await supabaseClient.from('bets')
-    .update({ status: 'settled', result, winner_team_id: winnerTeamId || null, settled_at: new Date().toISOString() })
-    .eq('id', betId).select().single();
-  if (error) { console.error('settleBet failed', error); showToast("Couldn't settle that bet — try again."); return; }
+async function settleBetManually(betId, outcome) {
   const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
-  if (bet) Object.assign(bet, mapBetRow(data));
+  if (!bet) return;
+  const stake = Number(bet.stake) || 0;
+  const payout = outcome === 'win' ? Number(bet.potentialPayout ?? stake) : stake;
+  const winnerTeamId = outcome === 'loss' ? bet.teamB : outcome === 'win' ? bet.teamA : null;
+  const { data, error } = await supabaseClient.from('bets')
+    .update({
+      status: 'settled', result: outcome, winner_team_id: winnerTeamId || null,
+      settled_by: currentActingTeamId || 'book', settled_at: new Date().toISOString(), needs_review: false,
+    })
+    .eq('id', betId).eq('status', 'open').select().single();
+  if (error) { console.error('settleBetManually failed', error); showToast("Couldn't settle that bet — try again."); return; }
+  if (outcome === 'win' || outcome === 'push') {
+    const walletTeamId = bet.placedBy || bet.teamA;
+    if (walletTeamId) {
+      const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
+        team_id: walletTeamId, delta: payout, reason: outcome === 'win' ? 'bet_win' : 'bet_push',
+        bet_id: betId, note: `${bet.type} bet settled by the book: ${outcome}`, created_by: currentUser ? currentUser.id : null,
+      });
+      if (ledgerErr) console.error('settle credit failed', ledgerErr);
+    }
+  }
+  const idx = (LEAGUE_DATA.bets || []).findIndex(b => b.id === betId);
+  if (idx !== -1) LEAGUE_DATA.bets[idx] = mapBetRow(data);
+  await loadCatpoints();
   refreshBetViews();
+  showToast('Bet settled.');
 }
 
-async function acceptBet(betId, acceptedBy) {
-  const { data, error } = await supabaseClient.from('bets')
-    .update({ status: 'open', accepted_by: acceptedBy || null, accepted_at: new Date().toISOString() })
-    .eq('id', betId).select().single();
-  if (error) { console.error('acceptBet failed', error); showToast("Couldn't accept that bet — try again."); return; }
-  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
-  if (bet) Object.assign(bet, mapBetRow(data));
-  refreshBetViews();
-}
-
-async function declineBet(betId, declinedBy) {
-  const { data, error } = await supabaseClient.from('bets')
-    .update({ status: 'declined', declined_by: declinedBy || null })
-    .eq('id', betId).select().single();
-  if (error) { console.error('declineBet failed', error); showToast("Couldn't decline that bet — try again."); return; }
-  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
-  if (bet) Object.assign(bet, mapBetRow(data));
-  refreshBetViews();
+function renderAdminPanel() {
+  const wrap = document.getElementById('book-settle-list');
+  if (!wrap) return;
+  const needsBook = (LEAGUE_DATA.bets || []).filter(b =>
+    b.status === 'open' && (b.needsReview || ['waiver', 'trade', 'parlay', 'futures'].includes(b.type))
+  );
+  if (!needsBook.length) {
+    wrap.innerHTML = '<div class="recap-empty">Nothing waiting on you right now.</div>';
+    return;
+  }
+  wrap.innerHTML = needsBook.map(b => `
+    <div class="card bet-ledger-row" data-bet-id="${b.id}">
+      <div class="bet-ledger-top">
+        <span class="badge ${b.needsReview ? 'sacko' : 'champ'}">${b.needsReview ? 'Needs review' : b.type}</span>
+        <span class="bet-ledger-date mono">${b.createdAt}</span>
+      </div>
+      <div class="bet-ledger-summary">${b.summary}</div>
+      ${b.stake != null ? `<div class="bet-ledger-stake mono">${teamName(b.placedBy)} risked ${formatCatpoints(b.stake)} CP to win ${formatCatpoints((b.potentialPayout ?? b.stake) - b.stake)} CP</div>` : ''}
+      <div class="bet-ledger-settle">
+        <button class="btn book-settle-btn" type="button" data-settle="${b.id}" data-outcome="win">Won</button>
+        <button class="btn ghost book-settle-btn" type="button" data-settle="${b.id}" data-outcome="loss">Lost</button>
+        <button class="btn ghost book-settle-btn" type="button" data-settle="${b.id}" data-outcome="push">Push</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 async function removeBet(betId) {
@@ -1700,13 +1989,19 @@ function teamBetsFor(teamId) {
 function teamBetLogRowHtml(b) {
   const attribParts = [];
   if (b.placedBy) attribParts.push(`Placed by ${teamName(b.placedBy)}`);
-  if (b.acceptedBy) attribParts.push(`Accepted by ${teamName(b.acceptedBy)}`);
   const attribHtml = attribParts.length ? `<div class="bet-ledger-attrib">${attribParts.join(' &middot; ')}</div>` : '';
-  let resultHtml = '';
-  if (b.status === 'settled') resultHtml = `<div class="bet-ledger-result"><b>Result:</b> ${b.result}</div>`;
-  else if (b.status === 'declined') resultHtml = `<div class="bet-ledger-result">Nobody took this one.</div>`;
-  else if (b.status === 'pending') resultHtml = `<div class="bet-ledger-result">Awaiting response.</div>`;
-  else resultHtml = `<div class="bet-ledger-result">Awaiting final score.</div>`;
+  const stakeHtml = b.stake != null
+    ? `<div class="bet-ledger-stake mono">${formatCatpoints(b.stake)} CP to win ${formatCatpoints((b.potentialPayout ?? b.stake) - b.stake)} CP</div>`
+    : '';
+  let resultHtml = '<div class="bet-ledger-result">Awaiting final score.</div>';
+  if (b.status === 'settled') {
+    const change = b.result === 'win' ? `+${formatCatpoints((b.potentialPayout ?? b.stake) - (b.stake || 0))} CP`
+      : b.result === 'push' ? 'Stake refunded' : `-${formatCatpoints(b.stake || 0)} CP`;
+    const label = b.result === 'win' ? 'Won' : b.result === 'push' ? 'Push' : 'Lost';
+    resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}</div>`;
+  } else if (b.needsReview) {
+    resultHtml = '<div class="bet-ledger-result">Flagged for the book to review.</div>';
+  }
   return `
     <div class="card bet-ledger-row" data-bet-id="${b.id}">
       <div class="bet-ledger-top">
@@ -1718,13 +2013,19 @@ function teamBetLogRowHtml(b) {
       </div>
       <div class="bet-ledger-summary">${b.summary}</div>
       ${attribHtml}
+      ${stakeHtml}
       ${resultHtml}
     </div>`;
 }
 
 function renderPickEm() {
   if (!LEAGUE_DATA.bets) LEAGUE_DATA.bets = [];
-  renderBuildYourBets();
+  const bookTabBtn = document.querySelector('.pickem-tab-btn[data-pickem-tab="book"]');
+  if (bookTabBtn) bookTabBtn.hidden = !isAdmin();
+  if (isAdmin()) renderAdminPanel();
+  renderCatpointsChip();
+  renderSlip();
+  renderMyWagers();
   renderFuturesBoard('futures-top3-board', 'top3');
   renderFuturesBoard('futures-sacko-board', 'last');
   populateTeamSelect('weekly-team-a', 0);
@@ -1737,6 +2038,7 @@ function renderPickEm() {
   populateTeamSelect('trade-team-b', 1);
   populateTeamSelect('bench-team-a', 0);
   populateTeamSelect('bench-team-b', 1);
+  if (isAdmin()) populateTeamSelect('book-issue-team', 0);
   updateWeeklyPreview();
   updatePropPreview();
   updateParlayLegButtons();
@@ -2366,6 +2668,7 @@ function setUserBadge() {
   } else {
     badge.hidden = true;
   }
+  renderCatpointsChip();
 }
 
 function showAuthGate() {
@@ -2405,9 +2708,10 @@ function unlockApp() {
 }
 
 async function bootApp() {
-  await Promise.all([loadBets(), loadRecaps()]);
+  await Promise.all([loadBets(), loadRecaps(), loadCatpoints()]);
   subscribeBets();
   subscribeRecaps();
+  subscribeCatpoints();
   navigate(window.location.hash);
 }
 
@@ -2571,13 +2875,21 @@ document.addEventListener('click', e => {
   if (log && typeof log.scrollIntoView === 'function') log.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
+// Weekly Showdown market thresholds -- must match WEEKLY_BET_LABELS above.
+const WEEKLY_THRESHOLDS = { over: 218, under: 218, straight: 0, margin: 21 };
+
 document.addEventListener('click', e => {
   const placeBtn = e.target.closest('.place-futures-btn');
   if (!placeBtn) return;
   if (!requireActingTeam(null)) { flashButtonMessage(placeBtn, 'Pick your team above'); return; }
-  const { team, teamId, odds, market, rate } = placeBtn.dataset;
-  const text = `\u{1F3C6} CATDOME CUP FUTURES \u{1F3C6}\nI'm calling it: ${team} ${market} this season.\nOdds: ${odds} (${rate} historically)\n— Catdome Cup Pick 'Em`;
-  addDraft('futures', `${team} ${market} &mdash; ${odds} (Futures)`, text, { placedBy: currentActingTeamId, teamA: teamId });
+  const { team, teamId, odds, rawOdds, market, rate } = placeBtn.dataset;
+  addToSlip({
+    type: 'futures',
+    summary: `${team} ${market} &mdash; ${odds} (Futures)`,
+    text: `\u{1F3C6} CATDOME CUP FUTURES \u{1F3C6}\nI'm calling it: ${team} ${market} this season.\nOdds: ${odds} (${rate} historically)\n— Catdome Cup Sportsbook`,
+    teamA: teamId,
+    odds: Number(rawOdds),
+  });
   flashButtonMessage(placeBtn, 'Added!');
 });
 
@@ -2591,22 +2903,15 @@ if (weeklyPlaceBtn) weeklyPlaceBtn.addEventListener('click', () => {
   const a = document.getElementById('weekly-team-a').value, b = document.getElementById('weekly-team-b').value;
   if (a === b) { statusEl.textContent = 'Pick two different teams.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
-  const week = document.getElementById('weekly-week').value || 1;
-  addDraft('weekly', `${teamName(a)} vs ${teamName(b)} &mdash; Weekly Showdown, Week ${week}`, buildWeeklyText(), { placedBy: currentActingTeamId, teamA: a, teamB: b });
-  statusEl.textContent = 'Added to Build Your Bets — review it above.'; statusEl.className = 'form-status ok';
-});
-const weeklyShareBtn = document.getElementById('weekly-share');
-if (weeklyShareBtn) weeklyShareBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('weekly-status');
-  const a = document.getElementById('weekly-team-a').value, b = document.getElementById('weekly-team-b').value;
-  if (a === b) { statusEl.textContent = 'Pick two different teams.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  statusEl.textContent = ''; statusEl.className = 'form-status';
-  const week = document.getElementById('weekly-week').value || 1;
-  const betId = makeBetId();
-  const text = `${buildWeeklyText()}\nTap to accept: ${acceptLink(betId)}`;
-  shareChallenge(text, weeklyShareBtn);
-  captureBet('weekly', `${teamName(a)} vs ${teamName(b)} &mdash; Weekly Showdown, Week ${week}`, text, { status: 'pending', presetId: betId, placedBy: currentActingTeamId, teamA: a, teamB: b });
+  const week = Number(document.getElementById('weekly-week').value) || 1;
+  const market = document.getElementById('weekly-bet-type').value;
+  addToSlip({
+    type: 'weekly',
+    summary: `${teamName(a)} vs ${teamName(b)} &mdash; Weekly Showdown, Week ${week}`,
+    text: buildWeeklyText(),
+    teamA: a, teamB: b, week, market, threshold: WEEKLY_THRESHOLDS[market],
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
 
 ['prop-team-a', 'prop-team-b', 'prop-player-a', 'prop-player-b', 'prop-week'].forEach(id => {
@@ -2619,24 +2924,15 @@ if (propPlaceBtn) propPlaceBtn.addEventListener('click', () => {
   const pa = document.getElementById('prop-player-a').value.trim(), pb = document.getElementById('prop-player-b').value.trim();
   if (!pa || !pb) { statusEl.textContent = 'Add both players first.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
-  const propWeek = document.getElementById('prop-week').value || 1;
+  const propWeek = Number(document.getElementById('prop-week').value) || 1;
   const propTeamA = document.getElementById('prop-team-a').value, propTeamB = document.getElementById('prop-team-b').value;
-  addDraft('prop', `${pa} vs ${pb} &mdash; Player Prop, Week ${propWeek}`, buildPropText(), { placedBy: currentActingTeamId, teamA: propTeamA, teamB: propTeamB });
-  statusEl.textContent = 'Added to Build Your Bets — review it above.'; statusEl.className = 'form-status ok';
-});
-const propShareBtn = document.getElementById('prop-share');
-if (propShareBtn) propShareBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('prop-status');
-  const pa = document.getElementById('prop-player-a').value.trim(), pb = document.getElementById('prop-player-b').value.trim();
-  if (!pa || !pb) { statusEl.textContent = 'Add both players first.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  statusEl.textContent = ''; statusEl.className = 'form-status';
-  const propWeek = document.getElementById('prop-week').value || 1;
-  const propTeamA = document.getElementById('prop-team-a').value, propTeamB = document.getElementById('prop-team-b').value;
-  const betId = makeBetId();
-  const text = `${buildPropText()}\nTap to accept: ${acceptLink(betId)}`;
-  shareChallenge(text, propShareBtn);
-  captureBet('prop', `${pa} vs ${pb} &mdash; Player Prop, Week ${propWeek}`, text, { status: 'pending', presetId: betId, placedBy: currentActingTeamId, teamA: propTeamA, teamB: propTeamB });
+  addToSlip({
+    type: 'prop',
+    summary: `${pa} vs ${pb} &mdash; Player Prop, Week ${propWeek}`,
+    text: buildPropText(),
+    teamA: propTeamA, teamB: propTeamB, week: propWeek, playerA: pa, playerB: pb,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
 
 const parlayWeekInput = document.getElementById('parlay-week');
@@ -2671,22 +2967,14 @@ if (parlayPlaceBtn) parlayPlaceBtn.addEventListener('click', () => {
   if (parlayLegs().length < 2) { statusEl.textContent = 'Add at least 2 legs.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
   const parlayN = document.querySelectorAll('#parlay-legs .parlay-leg').length;
-  const parlayWk = document.getElementById('parlay-week').value || 1;
-  addDraft('parlay', `${parlayN}-leg TD Parlay, Week ${parlayWk} &mdash; ${parlayLegs().join(', ')}`, buildParlayText(), { placedBy: currentActingTeamId });
-  statusEl.textContent = 'Added to Build Your Bets — review it above.'; statusEl.className = 'form-status ok';
-});
-const parlayShareBtn = document.getElementById('parlay-share');
-if (parlayShareBtn) parlayShareBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('parlay-status');
-  if (parlayLegs().length < 2) { statusEl.textContent = 'Add at least 2 legs.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  statusEl.textContent = ''; statusEl.className = 'form-status';
-  const parlayN = document.querySelectorAll('#parlay-legs .parlay-leg').length;
-  const parlayWk = document.getElementById('parlay-week').value || 1;
-  const betId = makeBetId();
-  const text = `${buildParlayText()}\nTap to accept: ${acceptLink(betId)}`;
-  shareChallenge(text, parlayShareBtn);
-  captureBet('parlay', `${parlayN}-leg TD Parlay, Week ${parlayWk} &mdash; ${parlayLegs().join(', ')}`, text, { status: 'pending', presetId: betId, placedBy: currentActingTeamId });
+  const parlayWk = Number(document.getElementById('parlay-week').value) || 1;
+  addToSlip({
+    type: 'parlay',
+    summary: `${parlayN}-leg TD Parlay, Week ${parlayWk} &mdash; ${parlayLegs().join(', ')}`,
+    text: buildParlayText(),
+    week: parlayWk, payoutMultiplier: Number(parlayMultiplier(parlayN)),
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
 
 ['waiver-team-a', 'waiver-team-b', 'waiver-player-a', 'waiver-player-b', 'waiver-week'].forEach(id => {
@@ -2699,26 +2987,16 @@ if (waiverPlaceBtn) waiverPlaceBtn.addEventListener('click', () => {
   const pa = document.getElementById('waiver-player-a').value.trim(), pb = document.getElementById('waiver-player-b').value.trim();
   if (!pa || !pb) { statusEl.textContent = 'Add both waiver pickups first.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
-  const waiverWeek = document.getElementById('waiver-week').value || 1;
+  const waiverWeek = Number(document.getElementById('waiver-week').value) || 1;
   const waiverTeamA = document.getElementById('waiver-team-a').value, waiverTeamB = document.getElementById('waiver-team-b').value;
   const waiverA = teamName(waiverTeamA), waiverB = teamName(waiverTeamB);
-  addDraft('waiver', `${waiverA}'s ${pa} vs ${waiverB}'s ${pb} &mdash; Waiver Wire Wizard, Week ${waiverWeek}`, buildWaiverText(), { placedBy: currentActingTeamId, teamA: waiverTeamA, teamB: waiverTeamB });
-  statusEl.textContent = 'Added to Build Your Bets — review it above.'; statusEl.className = 'form-status ok';
-});
-const waiverShareBtn = document.getElementById('waiver-share');
-if (waiverShareBtn) waiverShareBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('waiver-status');
-  const pa = document.getElementById('waiver-player-a').value.trim(), pb = document.getElementById('waiver-player-b').value.trim();
-  if (!pa || !pb) { statusEl.textContent = 'Add both waiver pickups first.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  statusEl.textContent = ''; statusEl.className = 'form-status';
-  const waiverWeek = document.getElementById('waiver-week').value || 1;
-  const waiverTeamA = document.getElementById('waiver-team-a').value, waiverTeamB = document.getElementById('waiver-team-b').value;
-  const waiverA = teamName(waiverTeamA), waiverB = teamName(waiverTeamB);
-  const betId = makeBetId();
-  const text = `${buildWaiverText()}\nTap to accept: ${acceptLink(betId)}`;
-  shareChallenge(text, waiverShareBtn);
-  captureBet('waiver', `${waiverA}'s ${pa} vs ${waiverB}'s ${pb} &mdash; Waiver Wire Wizard, Week ${waiverWeek}`, text, { status: 'pending', presetId: betId, placedBy: currentActingTeamId, teamA: waiverTeamA, teamB: waiverTeamB });
+  addToSlip({
+    type: 'waiver',
+    summary: `${waiverA}'s ${pa} vs ${waiverB}'s ${pb} &mdash; Waiver Wire Wizard, Week ${waiverWeek}`,
+    text: buildWaiverText(),
+    teamA: waiverTeamA, teamB: waiverTeamB, week: waiverWeek, playerA: pa, playerB: pb,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
 
 ['trade-team-a', 'trade-team-b', 'trade-call', 'trade-week'].forEach(id => {
@@ -2731,24 +3009,15 @@ if (tradePlaceBtn) tradePlaceBtn.addEventListener('click', () => {
   const a = document.getElementById('trade-team-a').value, b = document.getElementById('trade-team-b').value;
   if (a === b) { statusEl.textContent = 'Pick two different teams.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
-  const tradeWeek = document.getElementById('trade-week').value || 8;
+  const tradeWeek = Number(document.getElementById('trade-week').value) || 8;
   const tradeCallLabel = TRADE_CALL_LABELS[document.getElementById('trade-call').value];
-  addDraft('trade', `${teamName(a)} &amp; ${teamName(b)} trade ${tradeCallLabel} by Week ${tradeWeek} &mdash; Trade Deadline Chaos`, buildTradeText(), { placedBy: currentActingTeamId, teamA: a, teamB: b });
-  statusEl.textContent = 'Added to Build Your Bets — review it above.'; statusEl.className = 'form-status ok';
-});
-const tradeShareBtn = document.getElementById('trade-share');
-if (tradeShareBtn) tradeShareBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('trade-status');
-  const a = document.getElementById('trade-team-a').value, b = document.getElementById('trade-team-b').value;
-  if (a === b) { statusEl.textContent = 'Pick two different teams.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  statusEl.textContent = ''; statusEl.className = 'form-status';
-  const tradeWeek = document.getElementById('trade-week').value || 8;
-  const tradeCallLabel = TRADE_CALL_LABELS[document.getElementById('trade-call').value];
-  const betId = makeBetId();
-  const text = `${buildTradeText()}\nTap to accept: ${acceptLink(betId)}`;
-  shareChallenge(text, tradeShareBtn);
-  captureBet('trade', `${teamName(a)} &amp; ${teamName(b)} trade ${tradeCallLabel} by Week ${tradeWeek} &mdash; Trade Deadline Chaos`, text, { status: 'pending', presetId: betId, placedBy: currentActingTeamId, teamA: a, teamB: b });
+  addToSlip({
+    type: 'trade',
+    summary: `${teamName(a)} &amp; ${teamName(b)} trade ${tradeCallLabel} by Week ${tradeWeek} &mdash; Trade Deadline Chaos`,
+    text: buildTradeText(),
+    teamA: a, teamB: b, week: tradeWeek,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
 
 ['bench-team-a', 'bench-team-b', 'bench-week'].forEach(id => {
@@ -2761,56 +3030,53 @@ if (benchPlaceBtn) benchPlaceBtn.addEventListener('click', () => {
   const a = document.getElementById('bench-team-a').value, b = document.getElementById('bench-team-b').value;
   if (a === b) { statusEl.textContent = 'Pick two different teams.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
-  const benchWeek = document.getElementById('bench-week').value || 1;
-  addDraft('bench', `${teamName(a)} vs ${teamName(b)} &mdash; Bench Points Bowl, Week ${benchWeek}`, buildBenchText(), { placedBy: currentActingTeamId, teamA: a, teamB: b });
-  statusEl.textContent = 'Added to Build Your Bets — review it above.'; statusEl.className = 'form-status ok';
+  const benchWeek = Number(document.getElementById('bench-week').value) || 1;
+  addToSlip({
+    type: 'bench',
+    summary: `${teamName(a)} vs ${teamName(b)} &mdash; Bench Points Bowl, Week ${benchWeek}`,
+    text: buildBenchText(),
+    teamA: a, teamB: b, week: benchWeek,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
-const benchShareBtn = document.getElementById('bench-share');
-if (benchShareBtn) benchShareBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('bench-status');
-  const a = document.getElementById('bench-team-a').value, b = document.getElementById('bench-team-b').value;
-  if (a === b) { statusEl.textContent = 'Pick two different teams.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  statusEl.textContent = ''; statusEl.className = 'form-status';
-  const benchWeek = document.getElementById('bench-week').value || 1;
-  const betId = makeBetId();
-  const text = `${buildBenchText()}\nTap to accept: ${acceptLink(betId)}`;
-  shareChallenge(text, benchShareBtn);
-  captureBet('bench', `${teamName(a)} vs ${teamName(b)} &mdash; Bench Points Bowl, Week ${benchWeek}`, text, { status: 'pending', presetId: betId, placedBy: currentActingTeamId, teamA: a, teamB: b });
+
+// ---- Bet slip tray: toggle, remove, stake input, place ----
+const slipTrayToggle = document.getElementById('slip-tray-toggle');
+if (slipTrayToggle) slipTrayToggle.addEventListener('click', () => {
+  document.getElementById('slip-tray').classList.toggle('expanded');
 });
 
 document.addEventListener('click', e => {
-  const confirmBtn = e.target.closest('.confirm-draft-btn');
-  if (confirmBtn) {
-    const row = confirmBtn.closest('.bet-ledger-row');
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Confirming…';
-    confirmDraft(row.dataset.betId).then(() => showToast('Bet confirmed — find it on your team page.'));
-    return;
-  }
-  const discardBtn = e.target.closest('.discard-draft-btn');
-  if (discardBtn) {
-    const row = discardBtn.closest('.bet-ledger-row');
-    discardDraft(row.dataset.betId);
-  }
+  const rmBtn = e.target.closest('[data-remove-slip]');
+  if (!rmBtn) return;
+  removeFromSlip(rmBtn.dataset.removeSlip);
+});
+
+document.addEventListener('input', e => {
+  const stakeInput = e.target.closest('[data-slip-stake]');
+  if (!stakeInput) return;
+  updateSlipItemPayout(stakeInput.dataset.slipStake);
+});
+
+const slipPlaceBtn = document.getElementById('slip-place-btn');
+if (slipPlaceBtn) slipPlaceBtn.addEventListener('click', () => { placeSlip(); });
+
+// ---- The Book: admin panel wiring ----
+const bookIssueSubmitBtn = document.getElementById('book-issue-submit');
+if (bookIssueSubmitBtn) bookIssueSubmitBtn.addEventListener('click', () => {
+  const teamId = document.getElementById('book-issue-team').value;
+  const amount = Number(document.getElementById('book-issue-amount').value);
+  const note = document.getElementById('book-issue-note').value.trim();
+  const statusEl = document.getElementById('book-issue-status');
+  if (!teamId || !amount) { if (statusEl) { statusEl.textContent = 'Pick a team and an amount.'; statusEl.className = 'form-status err'; } return; }
+  issueCatpoints(teamId, amount, note);
 });
 
 document.addEventListener('click', e => {
-  const acceptBtn = e.target.closest('.accept-bet-btn');
-  if (acceptBtn) {
-    if (!requireActingTeam(null)) { flashButtonMessage(acceptBtn, 'Pick your team above'); return; }
-    const row = acceptBtn.closest('.bet-ledger-row');
-    acceptBtn.disabled = true;
-    acceptBet(row.dataset.betId, currentActingTeamId);
-    return;
-  }
-  const declineBtn = e.target.closest('.decline-bet-btn');
-  if (declineBtn) {
-    if (!requireActingTeam(null)) { flashButtonMessage(declineBtn, 'Pick your team above'); return; }
-    const row = declineBtn.closest('.bet-ledger-row');
-    declineBtn.disabled = true;
-    declineBet(row.dataset.betId, currentActingTeamId);
-  }
+  const settleBtn = e.target.closest('.book-settle-btn');
+  if (!settleBtn) return;
+  settleBtn.disabled = true;
+  settleBetManually(settleBtn.dataset.settle, settleBtn.dataset.outcome);
 });
 
 document.addEventListener('click', e => {
