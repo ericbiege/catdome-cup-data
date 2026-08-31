@@ -824,6 +824,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <button type="button" class="nfl-subtab-btn" data-nfl-subtab="passing" aria-current="false">Passing</button>
         <button type="button" class="nfl-subtab-btn" data-nfl-subtab="receiving" aria-current="false">Receiving</button>
         <button type="button" class="nfl-subtab-btn" data-nfl-subtab="rushing" aria-current="false">Rushing</button>
+        <button type="button" class="nfl-subtab-btn" data-nfl-subtab="defense" aria-current="false">Defense</button>
       </div>
 
       <div class="nfl-subpanel active" data-nfl-subpanel="lines">
@@ -834,7 +835,14 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
 
       <div class="nfl-subpanel" data-nfl-subpanel="td">
         <div class="yardline" data-label="TD Scorers"></div>
-        <div class="desc" style="margin-bottom:14px;">Anytime touchdown-scorer odds, synced weekly from the same book as the game lines.</div>
+        <div class="desc" style="margin-bottom:14px;">Touchdown-scorer odds, synced from the same book as the game lines.</div>
+        <div class="prop-type-toggle" data-prop-category="td">
+          <button type="button" class="prop-type-btn" data-prop-type="anytime_td" aria-current="true">Anytime TD</button>
+          <button type="button" class="prop-type-btn" data-prop-type="first_td" aria-current="false">First TD</button>
+          <button type="button" class="prop-type-btn" data-prop-type="last_td" aria-current="false">Last TD</button>
+          <button type="button" class="prop-type-btn" data-prop-type="multi_td" aria-current="false">2+ TDs</button>
+          <button type="button" class="prop-type-btn" data-prop-type="multi_td_ou" aria-current="false">2+ TDs O/U</button>
+        </div>
         <div id="nfl-props-td-list" class="matchup-list"></div>
       </div>
 
@@ -843,6 +851,8 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div class="prop-type-toggle" data-prop-category="passing">
           <button type="button" class="prop-type-btn" data-prop-type="pass_yds" aria-current="true">Pass Yards</button>
           <button type="button" class="prop-type-btn" data-prop-type="pass_yds_ou" aria-current="false">Pass Yards O/U</button>
+          <button type="button" class="prop-type-btn" data-prop-type="pass_int" aria-current="false">Interceptions</button>
+          <button type="button" class="prop-type-btn" data-prop-type="pass_int_ou" aria-current="false">Interceptions O/U</button>
         </div>
         <div id="nfl-props-passing-list" class="matchup-list"></div>
       </div>
@@ -852,6 +862,10 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div class="prop-type-toggle" data-prop-category="receiving">
           <button type="button" class="prop-type-btn" data-prop-type="reception_yds" aria-current="true">Receiving Yards</button>
           <button type="button" class="prop-type-btn" data-prop-type="reception_yds_ou" aria-current="false">Receiving Yards O/U</button>
+          <button type="button" class="prop-type-btn" data-prop-type="receptions" aria-current="false">Receptions</button>
+          <button type="button" class="prop-type-btn" data-prop-type="receptions_ou" aria-current="false">Receptions O/U</button>
+          <button type="button" class="prop-type-btn" data-prop-type="reception_long" aria-current="false">Longest Reception</button>
+          <button type="button" class="prop-type-btn" data-prop-type="reception_long_ou" aria-current="false">Longest Reception O/U</button>
         </div>
         <div id="nfl-props-receiving-list" class="matchup-list"></div>
       </div>
@@ -861,8 +875,20 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div class="prop-type-toggle" data-prop-category="rushing">
           <button type="button" class="prop-type-btn" data-prop-type="rush_yds" aria-current="true">Rush Yards</button>
           <button type="button" class="prop-type-btn" data-prop-type="rush_yds_ou" aria-current="false">Rush Yards O/U</button>
+          <button type="button" class="prop-type-btn" data-prop-type="rush_long" aria-current="false">Longest Rush</button>
+          <button type="button" class="prop-type-btn" data-prop-type="rush_long_ou" aria-current="false">Longest Rush O/U</button>
         </div>
         <div id="nfl-props-rushing-list" class="matchup-list"></div>
+      </div>
+
+      <div class="nfl-subpanel" data-nfl-subpanel="defense">
+        <div class="yardline" data-label="Defensive Props"></div>
+        <div class="desc" style="margin-bottom:14px;">Sack props, synced from the same book as the game lines.</div>
+        <div class="prop-type-toggle" data-prop-category="defense">
+          <button type="button" class="prop-type-btn" data-prop-type="sacks" aria-current="true">Sacks</button>
+          <button type="button" class="prop-type-btn" data-prop-type="sacks_ou" aria-current="false">Sacks O/U</button>
+        </div>
+        <div id="nfl-props-defense-list" class="matchup-list"></div>
       </div>
     </div>
 
@@ -3022,7 +3048,7 @@ document.querySelectorAll('.prop-type-toggle').forEach(toggle => {
     const category = toggle.dataset.propCategory;
     toggle.querySelectorAll('[data-prop-type]').forEach(b => b.setAttribute('aria-current', b === btn ? 'true' : 'false'));
     NFL_PROP_VIEW[category] = btn.dataset.propType;
-    renderYardageCategory(category);
+    renderPropCategory(category);
   });
 });
 
@@ -3255,10 +3281,37 @@ if (nflGamesList) nflGamesList.addEventListener('click', e => {
   addToSlip(item);
 });
 
-// ---- NFL Player Props: real DraftKings-style odds, synced weekly (nfl-props-sync) ----
+// ---- NFL Player Props: real DraftKings-style odds, synced daily (nfl-props-sync) ----
 let NFL_PROPS = [];
-// Which prop-type button is active per category -- base market = ladder view, "_ou" suffix = Over/Under view.
-const NFL_PROP_VIEW = { passing: 'pass_yds', receiving: 'reception_yds', rushing: 'rush_yds' };
+
+// Catalog of every prop market the site knows how to render and bet on.
+//   category  -- which sub-tab this market lives under
+//   kind      -- 'single' (one priced outcome per player, e.g. Anytime TD) or
+//                'threshold' (a line + Over/Under, rendered as either a "X+"
+//                ladder or a straight O/U toggle depending on NFL_PROP_VIEW)
+//   tabLabel  -- prop-type toggle / chip / empty-state text
+//   betLabel  -- human label used in bet-slip summaries
+const PROP_MARKET_DEFS = {
+  anytime_td:     { category: 'td',        kind: 'single',    tabLabel: 'Anytime TD',    betLabel: 'Anytime TD Scorer' },
+  first_td:       { category: 'td',        kind: 'single',    tabLabel: 'First TD',      betLabel: 'First TD Scorer' },
+  last_td:        { category: 'td',        kind: 'single',    tabLabel: 'Last TD',       betLabel: 'Last TD Scorer' },
+  multi_td:       { category: 'td',        kind: 'threshold', tabLabel: '2+ TDs',        betLabel: 'Touchdowns' },
+  pass_yds:       { category: 'passing',   kind: 'threshold', tabLabel: 'Pass Yards',    betLabel: 'Pass Yards' },
+  pass_int:       { category: 'passing',   kind: 'threshold', tabLabel: 'Interceptions', betLabel: 'Interceptions' },
+  reception_yds:  { category: 'receiving', kind: 'threshold', tabLabel: 'Rec Yards',     betLabel: 'Receiving Yards' },
+  receptions:     { category: 'receiving', kind: 'threshold', tabLabel: 'Receptions',    betLabel: 'Receptions' },
+  reception_long: { category: 'receiving', kind: 'threshold', tabLabel: 'Longest Rec',   betLabel: 'Longest Reception' },
+  rush_yds:       { category: 'rushing',   kind: 'threshold', tabLabel: 'Rush Yards',    betLabel: 'Rush Yards' },
+  rush_long:      { category: 'rushing',   kind: 'threshold', tabLabel: 'Longest Rush',  betLabel: 'Longest Rush' },
+  sacks:          { category: 'defense',   kind: 'threshold', tabLabel: 'Sacks',         betLabel: 'Sacks' },
+};
+const PROP_CATEGORIES = ['td', 'passing', 'receiving', 'rushing', 'defense'];
+const PROP_WRAP_IDS = {
+  td: 'nfl-props-td-list', passing: 'nfl-props-passing-list', receiving: 'nfl-props-receiving-list',
+  rushing: 'nfl-props-rushing-list', defense: 'nfl-props-defense-list',
+};
+// Which prop-type button is active per category -- base market = single/ladder view, "_ou" suffix = Over/Under view.
+const NFL_PROP_VIEW = { td: 'anytime_td', passing: 'pass_yds', receiving: 'reception_yds', rushing: 'rush_yds', defense: 'sacks' };
 
 async function loadNflProps() {
   const week = currentLeagueWeek();
@@ -3274,15 +3327,9 @@ function subscribeNflProps() {
     .subscribe();
 }
 function renderNflProps() {
-  renderNflPropsTd();
-  renderYardageCategory('passing');
-  renderYardageCategory('receiving');
-  renderYardageCategory('rushing');
+  PROP_CATEGORIES.forEach(renderPropCategory);
 }
 
-function yardageLabel(market) {
-  return market === 'pass_yds' ? 'Pass Yds' : market === 'rush_yds' ? 'Rush Yds' : 'Rec Yds';
-}
 function propChipHtml(prop, label, locked) {
   return `<button type="button" class="mkt-chip prop-chip" data-prop-id="${prop.id}" ${locked ? 'disabled' : ''}><span>${label}</span><small>${formatOdds(prop.price)}</small></button>`;
 }
@@ -3291,36 +3338,22 @@ function propGameLabel(eventId) {
   return { label: game ? `${game.away_team} @ ${game.home_team}` : 'NFL Game', locked: game ? game.status !== 'scheduled' : false };
 }
 
-function renderNflPropsTd() {
-  const wrap = document.getElementById('nfl-props-td-list');
-  if (!wrap) return;
-  const rows = NFL_PROPS.filter(p => p.market === 'anytime_td');
-  if (!rows.length) { wrap.innerHTML = '<div class="prop-empty">TD scorer odds aren&rsquo;t synced yet &mdash; check back once this week&rsquo;s props are posted.</div>'; return; }
-  const byGame = new Map();
-  for (const p of rows) { if (!byGame.has(p.event_id)) byGame.set(p.event_id, []); byGame.get(p.event_id).push(p); }
-  wrap.innerHTML = [...byGame.entries()].map(([eventId, players]) => {
-    const { label, locked } = propGameLabel(eventId);
-    const sorted = players.slice().sort((a, b) => a.price - b.price);
-    const playerRows = sorted.map(p => `
-      <div class="prop-player-row">
-        <div class="prop-player-name">${p.player_name}</div>
-        <div class="prop-chip-row">${propChipHtml(p, 'Anytime TD', locked)}</div>
-      </div>`).join('');
-    return `<div class="prop-card"><div class="prop-card-head">${label}</div>${playerRows}</div>`;
-  }).join('');
-  syncPropChipSelection('nfl-props-td-list');
-}
-
-function renderYardageCategory(category) {
-  const market = { passing: 'pass_yds', receiving: 'reception_yds', rushing: 'rush_yds' }[category];
-  const wrapId = { passing: 'nfl-props-passing-list', receiving: 'nfl-props-receiving-list', rushing: 'nfl-props-rushing-list' }[category];
+// Renders whichever market is currently active for this category
+// (NFL_PROP_VIEW[category]) into that category's list container. Handles
+// both 'single' markets (one chip per player, e.g. Anytime TD) and
+// 'threshold' markets (either a "X+" ladder or a paired Over/Under toggle,
+// depending on whether the active view string ends in "_ou").
+function renderPropCategory(category) {
+  const wrapId = PROP_WRAP_IDS[category];
   const wrap = document.getElementById(wrapId);
   if (!wrap) return;
   const view = NFL_PROP_VIEW[category];
   const isOU = view.endsWith('_ou');
+  const market = isOU ? view.slice(0, -3) : view;
+  const def = PROP_MARKET_DEFS[market];
   const rows = NFL_PROPS.filter(p => p.market === market);
   if (!rows.length) {
-    wrap.innerHTML = `<div class="prop-empty">${yardageLabel(market)} odds aren&rsquo;t synced yet &mdash; check back once this week&rsquo;s props are posted.</div>`;
+    wrap.innerHTML = `<div class="prop-empty">${def ? def.tabLabel : 'These'} odds aren&rsquo;t synced yet &mdash; check back once this week&rsquo;s props are posted.</div>`;
     return;
   }
   const byGame = new Map();
@@ -3331,7 +3364,9 @@ function renderYardageCategory(category) {
     for (const p of gameRows) { if (!byPlayer.has(p.player_name)) byPlayer.set(p.player_name, []); byPlayer.get(p.player_name).push(p); }
     const playerRows = [...byPlayer.entries()].map(([player, playerProps]) => {
       let chips = '';
-      if (isOU) {
+      if (def && def.kind === 'single') {
+        chips = playerProps.map(p => propChipHtml(p, def.tabLabel, locked)).join('');
+      } else if (isOU) {
         const byLine = new Map();
         for (const p of playerProps) {
           const key = String(p.line);
@@ -3350,27 +3385,29 @@ function renderYardageCategory(category) {
     if (!playerRows) return '';
     return `<div class="prop-card"><div class="prop-card-head">${label}</div>${playerRows}</div>`;
   }).filter(Boolean).join('');
-  wrap.innerHTML = cards || `<div class="prop-empty">No ${isOU ? 'Over/Under' : 'yardage'} lines available for this view yet.</div>`;
+  wrap.innerHTML = cards || `<div class="prop-empty">No ${isOU ? 'Over/Under' : 'lines'} available for this view yet.</div>`;
   syncPropChipSelection(wrapId);
 }
 
-// prop.market is the DB's base market ('anytime_td' | 'pass_yds' | 'rush_yds' | 'reception_yds');
-// the bet's stored market folds in the side, e.g. 'pass_yds_over', matching how
-// nfl-props-grade parses it back apart.
+// prop.market is the DB's base market key (see PROP_MARKET_DEFS above); the
+// bet's stored market folds in the side for threshold markets, e.g.
+// 'pass_yds_over', matching how nfl-props-grade parses it back apart.
+// Single-sided markets (anytime_td, first_td, last_td) store the bare market name.
 function propItemFromId(propId) {
   const prop = NFL_PROPS.find(p => p.id === propId);
   if (!prop) return null;
+  const def = PROP_MARKET_DEFS[prop.market] || { kind: 'threshold', betLabel: prop.market };
   const { label: gameLabel } = propGameLabel(prop.event_id);
-  const marketLabel = prop.market === 'anytime_td'
-    ? `${prop.player_name} Anytime TD Scorer`
-    : `${prop.player_name} ${prop.side === 'under' ? 'Under' : 'Over'} ${prop.line} ${yardageLabel(prop.market)}`;
-  const marketKey = prop.market === 'anytime_td' ? 'anytime_td' : `${prop.market}_${prop.side}`;
+  const marketLabel = def.kind === 'single'
+    ? `${prop.player_name} ${def.betLabel}`
+    : `${prop.player_name} ${prop.side === 'under' ? 'Under' : 'Over'} ${prop.line} ${def.betLabel}`;
+  const marketKey = def.kind === 'single' ? prop.market : `${prop.market}_${prop.side}`;
   return {
     type: 'nfl_prop',
     summary: `${marketLabel} &mdash; Week ${prop.week} (NFL)`,
     text: `\u{1F3C8} CATDOME CUP CHALLENGE \u{1F3C8}\n${gameLabel}\nBet: ${marketLabel}\n— sent from Catdome Cup Sportsbook`,
     playerA: prop.player_name, week: prop.week, market: marketKey,
-    threshold: prop.market === 'anytime_td' ? null : Number(prop.line),
+    threshold: def.kind === 'single' ? null : Number(prop.line),
     odds: Number(prop.price) || HOUSE_ODDS,
   };
 }
@@ -3385,9 +3422,9 @@ function syncPropChipSelection(wrapId) {
   });
 }
 function syncAllPropChipSelection() {
-  ['nfl-props-td-list', 'nfl-props-passing-list', 'nfl-props-receiving-list', 'nfl-props-rushing-list'].forEach(syncPropChipSelection);
+  Object.values(PROP_WRAP_IDS).forEach(syncPropChipSelection);
 }
-['nfl-props-td-list', 'nfl-props-passing-list', 'nfl-props-receiving-list', 'nfl-props-rushing-list'].forEach(id => {
+Object.values(PROP_WRAP_IDS).forEach(id => {
   const wrap = document.getElementById(id);
   if (!wrap) return;
   wrap.addEventListener('click', e => {
