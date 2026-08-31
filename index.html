@@ -1149,13 +1149,21 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-panel" data-pickem-panel="futures">
+      <div class="yardline" data-label="Futures &middot; Catdome Cup Champion"></div>
+      <div class="desc" style="margin-bottom:14px;">Odds are generated from each team's actual championship rate across every completed Catdome Cup season &mdash; not Vegas math, just history repeating itself. Or not. <b>Futures close Week 1.</b></div>
+      <div class="futures-grid" id="futures-champion-board"></div>
+
       <div class="yardline" data-label="Futures &middot; Top 3 Finish"></div>
-      <div class="desc" style="margin-bottom:14px;">Odds are generated from each team's actual top-3 finish rate across every completed Catdome Cup season &mdash; not Vegas math, just history repeating itself. Or not. <b>Futures close Week 1.</b></div>
+      <div class="desc" style="margin-bottom:14px;">Same math, wider net &mdash; each team's actual top-3 finish rate across every completed season.</div>
       <div class="futures-grid" id="futures-top3-board"></div>
 
       <div class="yardline" data-label="Futures &middot; Toilet Bowl Watch"></div>
       <div class="desc" style="margin-bottom:14px;">The inverse market, for managers who prefer betting on chaos. Based on each team's historical last-place rate.</div>
       <div class="futures-grid" id="futures-sacko-board"></div>
+
+      <div class="yardline" data-label="Futures &middot; Waiver Wire King"></div>
+      <div class="desc" style="margin-bottom:14px;">Which front office can't leave the wire alone? Odds are built from real transaction logs &mdash; how often each team has actually led the league in waiver moves in a season.</div>
+      <div class="futures-grid" id="futures-waiver-board"></div>
 
       <div class="yardline" data-label="Trade Deadline Chaos"></div>
       <div class="desc" style="margin-bottom:14px;">Stake Catpoints on whether a trade happens before a deadline week &mdash; a season-long market, same as the boards above.</div>
@@ -2137,9 +2145,25 @@ function teamCompletedSeasons(teamId) {
 }
 function teamFinishCount(teamId, kind) {
   return LEAGUE_DATA.seasons.filter(s => s.champion).reduce((n, s) => {
+    if (kind === 'champion') return n + (s.champion === teamId ? 1 : 0);
     if (kind === 'last') return n + (s.lastPlace === teamId ? 1 : 0);
     const row = s.standings.find(r => r.teamId === teamId);
     return n + (row && row.rank >= 1 && row.rank <= 3 ? 1 : 0);
+  }, 0);
+}
+
+// Waiver Wire King: real per-season transaction data (moves[teamId].waiver),
+// same Laplace-smoothed odds formula as the finish-based futures boards above.
+// Only seasons with recorded moves data count toward the denominator, so a
+// team that joined after moves tracking started isn't unfairly penalized.
+function seasonsWithMovesFor(teamId) {
+  return LEAGUE_DATA.seasons.filter(s => s.champion && s.moves && s.moves[teamId]);
+}
+function teamWaiverLeadCount(teamId) {
+  return seasonsWithMovesFor(teamId).reduce((n, s) => {
+    const maxWaiver = Math.max(...activeTeams().map(t => (s.moves[t.id] && s.moves[t.id].waiver) || 0));
+    const mine = (s.moves[teamId] && s.moves[teamId].waiver) || 0;
+    return n + (maxWaiver > 0 && mine === maxWaiver ? 1 : 0);
   }, 0);
 }
 function probToAmericanOdds(p) {
@@ -2157,13 +2181,33 @@ function renderFuturesBoard(elId, kind) {
     const p = (hits + 1) / (seasons + 2);
     return { team: t, seasons, hits, p, odds: probToAmericanOdds(p) };
   }).sort((a, b) => b.p - a.p);
-  const marketLabel = kind === 'last' ? 'finishes LAST (Toilet Bowl)' : 'finishes in the Top 3';
+  const marketLabel = kind === 'champion' ? 'wins the Catdome Cup Championship'
+    : kind === 'last' ? 'finishes LAST (Toilet Bowl)'
+    : 'finishes in the Top 3';
   wrap.innerHTML = rows.map(r => `
     <div class="futures-tile">
       <div class="ft-team">${r.team.name}</div>
       <div class="ft-odds ${r.odds < 0 ? 'fav' : 'dog'}">${formatOdds(r.odds)}</div>
       <div class="ft-meta">${r.hits} of ${r.seasons} seasons &middot; ${pct(r.seasons ? r.hits / r.seasons : 0)}</div>
       <button class="ft-bet-btn place-futures-btn" type="button" data-team="${r.team.name}" data-team-id="${r.team.id}" data-odds="${formatOdds(r.odds)}" data-raw-odds="${r.odds}" data-market="${marketLabel}" data-rate="${r.hits} of ${r.seasons} seasons">Add to Slip</button>
+    </div>`).join('');
+}
+
+function renderWaiverFuturesBoard(elId) {
+  const wrap = document.getElementById(elId);
+  if (!wrap) return;
+  const rows = activeTeams().map(t => {
+    const seasons = seasonsWithMovesFor(t.id).length;
+    const hits = teamWaiverLeadCount(t.id);
+    const p = (hits + 1) / (seasons + 2);
+    return { team: t, seasons, hits, p, odds: probToAmericanOdds(p) };
+  }).sort((a, b) => b.p - a.p);
+  wrap.innerHTML = rows.map(r => `
+    <div class="futures-tile">
+      <div class="ft-team">${r.team.name}</div>
+      <div class="ft-odds ${r.odds < 0 ? 'fav' : 'dog'}">${formatOdds(r.odds)}</div>
+      <div class="ft-meta">${r.hits} of ${r.seasons} seasons &middot; ${pct(r.seasons ? r.hits / r.seasons : 0)}</div>
+      <button class="ft-bet-btn place-futures-btn" type="button" data-team="${r.team.name}" data-team-id="${r.team.id}" data-odds="${formatOdds(r.odds)}" data-raw-odds="${r.odds}" data-market="leads the league in waiver-wire moves" data-rate="${r.hits} of ${r.seasons} seasons">Add to Slip</button>
     </div>`).join('');
 }
 
@@ -3144,8 +3188,10 @@ function renderPickEm() {
   renderSlip();
   renderMyWagers();
   renderIncomingChallenges();
+  renderFuturesBoard('futures-champion-board', 'champion');
   renderFuturesBoard('futures-top3-board', 'top3');
   renderFuturesBoard('futures-sacko-board', 'last');
+  renderWaiverFuturesBoard('futures-waiver-board');
   renderWeeklyMatchups();
   renderNflGames();
   populateTeamSelect('prop-team-a', 0);
