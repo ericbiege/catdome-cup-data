@@ -183,6 +183,79 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 .badge.sacko { background: color-mix(in srgb, var(--crimson) 18%, transparent); color: var(--crimson); border: 1px solid color-mix(in srgb, var(--crimson) 40%, transparent); }
 .badge.reg { background: color-mix(in srgb, var(--green-accent) 18%, transparent); color: var(--green-accent); border: 1px solid color-mix(in srgb, var(--green-accent) 40%, transparent); }
 
+/* ---------- home: catpoints standings tracker ---------- */
+.standings-lead {
+  background: radial-gradient(ellipse 140% 100% at 30% 0%, #4a1a72 0%, var(--field) 55%, #14061f 100%);
+  color: #f6f8f3; border-radius: var(--radius); padding: 22px 20px 20px; box-shadow: var(--shadow);
+  text-align: center; position: relative; overflow: hidden;
+}
+.standings-lead-rank { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; }
+.standings-lead-mono {
+  width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.12);
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 16px;
+  font-weight: 700; color: #f6f8f3; border: 1px solid rgba(255,255,255,0.24);
+}
+.standings-lead-name { font-family: var(--font-display); font-weight: 800; font-size: 23px; line-height: 1.1; }
+.standings-lead-owner { font-family: var(--font-mono); font-size: 11px; color: #c9bcd9; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+.standings-lead-bal { font-family: var(--font-display); font-weight: 800; font-size: 38px; color: var(--gold); line-height: 1; margin-top: 16px; }
+.standings-lead-bal .cp-glyph { font-size: 26px; margin-right: 2px; }
+.standings-lead-delta { font-family: var(--font-mono); font-size: 12px; font-weight: 700; color: var(--ink-dim); margin-top: 6px; }
+
+.standings-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.standings-runner {
+  background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 16px 12px; box-shadow: var(--shadow); text-align: center;
+}
+.standings-runner-rank { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
+.standings-runner-mono {
+  width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 50%; background: var(--paper-sunken);
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px;
+  font-weight: 700; color: var(--ink-dim); border: 1px solid var(--line);
+}
+.standings-runner-name { font-size: 13px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.standings-runner-owner { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); margin-top: 3px; }
+.standings-runner-bal { font-family: var(--font-mono); font-weight: 700; font-size: 18px; margin-top: 8px; font-variant-numeric: tabular-nums; }
+.standings-runner-bal .cp-glyph { color: var(--gold-strong); }
+.standings-runner-delta { font-family: var(--font-mono); font-size: 10px; font-weight: 700; margin-top: 2px; }
+
+.standings-board { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 0 18px; margin-top: 16px; }
+.standings-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.standings-row:last-child { border-bottom: none; }
+.standings-rank { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.03em; color: var(--ink-dim); width: 30px; flex-shrink: 0; text-transform: uppercase; }
+.standings-monogram {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: var(--paper-sunken);
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-mono);
+  font-size: 11px; font-weight: 700; color: var(--ink-dim); border: 1px solid var(--line);
+}
+.standings-who { flex: 1; min-width: 0; }
+.standings-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.standings-meta { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.standings-bal { font-family: var(--font-mono); font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; flex-shrink: 0; text-align: right; }
+.standings-bal .cp-glyph { margin-right: 1px; }
+.standings-delta.up { color: var(--green-accent); }
+.standings-delta.down { color: var(--crimson); }
+.standings-delta.flat { color: var(--ink-dim); }
+
+/* ---------- home: trending bets ---------- */
+.tb-board { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 4px 18px 14px; }
+.tb-row { padding: 14px 0; border-bottom: 1px solid var(--line); }
+.tb-row:last-child { border-bottom: none; }
+.tb-kind { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 4px; }
+.tb-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.tb-matchup { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.tb-split { display: flex; gap: 2px; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+.tb-split-a { background: var(--gold-strong); }
+.tb-split-b { background: color-mix(in srgb, var(--ink-dim) 45%, transparent); }
+.tb-split-cap { display: flex; justify-content: space-between; gap: 10px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); margin-top: 6px; }
+.tb-split-cap span:last-child { text-align: right; }
+.tb-split-cap b { color: var(--ink); font-weight: 700; }
+.tb-prop-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.tb-prop-name { font-size: 14px; font-weight: 600; }
+.tb-prop-odds { font-family: var(--font-mono); font-weight: 700; font-size: 13px; color: var(--gold-strong); flex-shrink: 0; }
+.tb-track { height: 6px; border-radius: 3px; background: var(--paper-sunken); margin-top: 9px; overflow: hidden; }
+.tb-fill { height: 100%; border-radius: 3px; background: var(--gold-strong); }
+.tb-prop-cap { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); margin-top: 6px; }
+
 /* ---------- tables ---------- */
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper-raised); box-shadow: var(--shadow); }
 table { width: 100%; border-collapse: collapse; }
@@ -736,8 +809,11 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     <div class="yardline" data-label="Latest From The Press Box"></div>
     <div id="home-recap-teaser"></div>
 
-    <div class="yardline" data-label="Pick Your Favorite Team"></div>
-    <div class="grid teams" id="home-team-grid"></div>
+    <div class="yardline" data-label="Catpoints Standings"></div>
+    <div id="home-standings-tracker"></div>
+
+    <div class="yardline" data-label="Trending Bets"></div>
+    <div id="home-trending-bets"></div>
   </section>
 
   <section class="view" id="view-pickem">
@@ -1423,9 +1499,188 @@ function renderHome() {
     teaserWrap.innerHTML = `<div class="recap-empty">Nobody's written this week's recap yet. <button class="btn ghost" data-nav="recaps" style="margin-left:8px;">Be the first</button></div>`;
   }
 
-  const grid = document.getElementById('home-team-grid');
-  grid.innerHTML = '';
-  LEAGUE_DATA.teams.filter(t => !t.excludeFromRecords).forEach(t => grid.appendChild(teamCard(t.id)));
+  renderHomeStandings();
+  renderHomeTrendingBets();
+}
+
+// ---- Home: Catpoints Standings Tracker -----------------------------------
+// Real, live balances (CATPOINTS_BALANCES, kept fresh by loadCatpoints/
+// subscribeCatpoints) ranked into #1 spotlight + #2/#3 pair + 4-10 list.
+// Weekly deltas come from loadCatpointsWeekly() below.
+function catpointsMonogram(name) {
+  const words = String(name).split(/\s+/).filter(Boolean);
+  if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
+  return words.map(w => w[0]).join('').slice(0, 3).toUpperCase();
+}
+function standingsDeltaHtml(delta) {
+  const d = Math.round((Number(delta) || 0) * 10) / 10;
+  if (!d) return '<span class="standings-delta flat">&mdash;</span>';
+  const cls = d > 0 ? 'up' : 'down';
+  const arrow = d > 0 ? '&#9650;' : '&#9660;';
+  return `<span class="standings-delta ${cls}">${arrow} ${formatCatpoints(Math.abs(d))}</span>`;
+}
+function ordinal(n) { return n === 1 ? '1st' : n === 2 ? '2nd' : n === 3 ? '3rd' : n + 'th'; }
+
+function renderHomeStandings() {
+  const wrap = document.getElementById('home-standings-tracker');
+  if (!wrap) return;
+  const teams = activeTeams();
+  if (!teams.length || !CATPOINTS_BALANCES.size) {
+    wrap.innerHTML = '<div class="recap-empty">Standings will post once the Catpoints economy is live.</div>';
+    return;
+  }
+  const rows = teams.map(t => ({
+    name: t.name, owner: t.owner || 'Manager TBD',
+    balance: CATPOINTS_BALANCES.get(t.id) || 0,
+    delta: CATPOINTS_WEEKLY_DELTA.get(t.id) || 0,
+  })).sort((a, b) => b.balance - a.balance || a.name.localeCompare(b.name));
+
+  const lead = rows[0];
+  const pair = rows.slice(1, 3);
+  const rest = rows.slice(3);
+
+  let html = `
+    <div class="standings-lead">
+      <div class="standings-lead-rank">In The Lead</div>
+      <div class="standings-lead-mono">${catpointsMonogram(lead.name)}</div>
+      <div class="standings-lead-name">${lead.name}</div>
+      <div class="standings-lead-owner">${lead.owner}</div>
+      <div class="standings-lead-bal"><span class="cp-glyph">&#8353;</span>${formatCatpoints(lead.balance)}</div>
+      <div class="standings-lead-delta">${standingsDeltaHtml(lead.delta)}${lead.delta ? ' this week' : ''}</div>
+    </div>`;
+
+  if (pair.length) {
+    html += `<div class="standings-pair">${pair.map((r, i) => `
+      <div class="standings-runner">
+        <div class="standings-runner-rank">${ordinal(i + 2)}</div>
+        <div class="standings-runner-mono">${catpointsMonogram(r.name)}</div>
+        <div class="standings-runner-name">${r.name}</div>
+        <div class="standings-runner-owner">${r.owner}</div>
+        <div class="standings-runner-bal"><span class="cp-glyph">&#8353;</span>${formatCatpoints(r.balance)}</div>
+        <div class="standings-runner-delta">${standingsDeltaHtml(r.delta)}</div>
+      </div>`).join('')}</div>`;
+  }
+
+  if (rest.length) {
+    html += `<div class="standings-board">${rest.map((r, i) => `
+      <div class="standings-row">
+        <div class="standings-rank">${ordinal(i + 4)}</div>
+        <div class="standings-monogram">${catpointsMonogram(r.name)}</div>
+        <div class="standings-who">
+          <div class="standings-name">${r.name}</div>
+          <div class="standings-meta">${r.owner} &middot; ${standingsDeltaHtml(r.delta)}</div>
+        </div>
+        <div class="standings-bal"><span class="cp-glyph">&#8353;</span>${formatCatpoints(r.balance)}</div>
+      </div>`).join('')}</div>`;
+  }
+
+  wrap.innerHTML = html;
+}
+
+// ---- Home: Trending Bets --------------------------------------------------
+// Built straight from LEAGUE_DATA.bets (already loaded/kept fresh by
+// loadBets()) -- no separate query. Two shapes:
+//  - two-sided markets (Weekly Showdown margin/straight/over/under, real NFL
+//    game spread/moneyline/total) get grouped into their market family so
+//    both sides of the same line count toward one consensus bar;
+//  - single-sided player props (nfl_prop) just count distinct bettors on
+//    that exact selection.
+// Only open/pending bets for the CURRENT week count -- settled/declined
+// bets are history, not "trending."
+function trendingPropLabel(f) {
+  const def = PROP_MARKET_DEFS[f.market];
+  if (def) return def.betLabel;
+  const m = /^(.*)_(over|under)$/.exec(f.market || '');
+  if (m && PROP_MARKET_DEFS[m[1]]) {
+    const base = PROP_MARKET_DEFS[m[1]];
+    const side = m[2] === 'over' ? 'Over' : 'Under';
+    return `${side}${f.threshold != null ? ' ' + f.threshold : ''} ${base.betLabel}`;
+  }
+  return f.market || 'Prop';
+}
+
+function renderHomeTrendingBets() {
+  const wrap = document.getElementById('home-trending-bets');
+  if (!wrap) return;
+  const week = currentLeagueWeek();
+  const live = (LEAGUE_DATA.bets || []).filter(b => b.week === week && (b.status === 'open' || b.status === 'pending'));
+  const totalManagers = activeTeams().length || 10;
+
+  const families = new Map();
+  live.filter(b => (b.type === 'weekly' || b.type === 'nfl') && b.teamA && b.teamB).forEach(b => {
+    const pair = [b.teamA, b.teamB].sort();
+    const isTotal = b.market === 'over' || b.market === 'under' || b.market === 'total_over' || b.market === 'total_under';
+    const familyMarket = isTotal ? 'total' : b.market;
+    const key = `${b.type}|${familyMarket}|${b.week}|${pair.join('/')}`;
+    if (!families.has(key)) families.set(key, { type: b.type, familyMarket, pair, sideA: new Set(), sideB: new Set() });
+    const f = families.get(key);
+    let side;
+    if (b.market === 'under' || b.market === 'total_under') side = 'B';
+    else if (b.market === 'over' || b.market === 'total_over') side = 'A';
+    else side = b.teamA === pair[0] ? 'A' : 'B';
+    (side === 'A' ? f.sideA : f.sideB).add(b.placedBy || b.id);
+  });
+  const matchupRows = [...families.values()]
+    .map(f => ({ ...f, countA: f.sideA.size, countB: f.sideB.size, total: f.sideA.size + f.sideB.size }))
+    .filter(f => f.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 2);
+
+  const propFamilies = new Map();
+  live.filter(b => b.type === 'nfl_prop' && b.playerA).forEach(b => {
+    const key = `${b.playerA}|${b.market}`;
+    if (!propFamilies.has(key)) propFamilies.set(key, { playerA: b.playerA, market: b.market, threshold: b.threshold, odds: b.odds, bettors: new Set() });
+    propFamilies.get(key).bettors.add(b.placedBy || b.id);
+  });
+  const propRows = [...propFamilies.values()]
+    .map(f => ({ ...f, count: f.bettors.size }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 2);
+
+  if (!matchupRows.length && !propRows.length) {
+    wrap.innerHTML = '<div class="recap-empty">No bets on the board yet this week. <button class="btn ghost" data-nav="pickem" style="margin-left:8px;">Be the first to load up</button></div>';
+    return;
+  }
+
+  const marketLabel = { margin: 'Margin', straight: 'Moneyline', spread: 'Spread', moneyline: 'Moneyline', total: 'Total' };
+  const matchupHtml = matchupRows.map(f => {
+    const [teamX, teamY] = f.pair;
+    const isTotal = f.familyMarket === 'total';
+    const nameX = isTotal ? 'Over' : teamName(teamX), nameY = isTotal ? 'Under' : teamName(teamY);
+    const pctA = Math.round((f.countA / f.total) * 100), pctB = 100 - pctA;
+    const kind = `${f.type === 'nfl' ? 'NFL Game Line' : 'Weekly Showdown'} &middot; ${marketLabel[f.familyMarket] || f.familyMarket}`;
+    return `
+      <div class="tb-row">
+        <div class="tb-kind">${kind}</div>
+        <div class="tb-head">
+          <div class="tb-matchup">${isTotal ? `${teamName(teamX)} vs ${teamName(teamY)}` : `${nameX} <span style="color:var(--ink-dim);">vs</span> ${nameY}`}</div>
+        </div>
+        <div class="tb-split">
+          <div class="tb-split-a" style="width:${pctA}%;"></div>
+          <div class="tb-split-b" style="width:${pctB}%;"></div>
+        </div>
+        <div class="tb-split-cap">
+          <span><b>${f.countA} of ${totalManagers}</b> on ${nameX}</span>
+          <span><b>${f.countB} of ${totalManagers}</b> on ${nameY}</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  const propHtml = propRows.map(f => {
+    const pct = Math.round((f.count / totalManagers) * 100);
+    return `
+      <div class="tb-row">
+        <div class="tb-kind">Player Prop &middot; ${trendingPropLabel(f)}</div>
+        <div class="tb-prop-head">
+          <div class="tb-prop-name">${f.playerA}</div>
+          <div class="tb-prop-odds">${formatOdds(f.odds)}</div>
+        </div>
+        <div class="tb-track"><div class="tb-fill" style="width:${pct}%;"></div></div>
+        <div class="tb-prop-cap">${f.count} of ${totalManagers} managers have this in a slip</div>
+      </div>`;
+  }).join('');
+
+  wrap.innerHTML = `<div class="tb-board">${matchupHtml}${propHtml}</div>`;
 }
 
 function teamCard(teamId) {
@@ -1716,6 +1971,7 @@ function showToast(msg) {
 
 // ---- Catpoints balances -------------------------------------------------
 const CATPOINTS_BALANCES = new Map(); // team_id -> balance
+const CATPOINTS_WEEKLY_DELTA = new Map(); // team_id -> net ledger change since this league week started
 
 async function loadCatpoints() {
   const { data, error } = await supabaseClient.from('catpoints_balances').select('*');
@@ -1724,6 +1980,27 @@ async function loadCatpoints() {
   for (const row of data || []) CATPOINTS_BALANCES.set(row.team_id, Number(row.balance) || 0);
   renderCatpointsChip();
   updateSlipTotal();
+  await loadCatpointsWeekly();
+  renderHomeStandings();
+}
+
+// The homepage standings tracker shows a "this week" delta arrow per team --
+// derived from the ledger (append-only) rather than stored anywhere, since
+// catpoints_balances only ever holds the current total. Reuses the same
+// week-1-start anchor as currentLeagueWeek() so the boundary always lines up
+// with "this week" everywhere else on the site; before Week 1 starts this
+// naturally resolves to zero for everyone (no games/bets have graded yet).
+function currentWeekStartDate() {
+  return new Date(SEASON_WEEK1_START.getTime() + (currentLeagueWeek() - 1) * 7 * 86400000);
+}
+async function loadCatpointsWeekly() {
+  const { data, error } = await supabaseClient.from('catpoints_ledger').select('team_id, delta')
+    .gte('created_at', currentWeekStartDate().toISOString());
+  if (error) { console.error('loadCatpointsWeekly failed', error); return; }
+  CATPOINTS_WEEKLY_DELTA.clear();
+  for (const row of data || []) {
+    CATPOINTS_WEEKLY_DELTA.set(row.team_id, (CATPOINTS_WEEKLY_DELTA.get(row.team_id) || 0) + (Number(row.delta) || 0));
+  }
 }
 
 function subscribeCatpoints() {
@@ -2005,6 +2282,7 @@ function refreshBetViews() {
   if (teamView && teamView.classList.contains('active') && activeTeamId) {
     renderTeamDetail(activeTeamId);
   }
+  renderHomeTrendingBets();
 }
 
 // ---- Supabase <-> app field mapping -----------------------------------
