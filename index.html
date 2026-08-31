@@ -940,7 +940,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <div>
         <div class="eyebrow">The Gambling Cave</div>
         <h2 class="sportsbook-heading">Catdome Sportsbook</h2>
-        <div class="desc">Every manager starts the season with 200 Catpoints. Win bets, win games, or work the waiver wire and trade market to build your bankroll.</div>
+        <div class="desc">Every manager starts the season with 800 Catpoints. Win bets, win games, or work the waiver wire and trade market to build your bankroll.</div>
       </div>
     </div>
 
@@ -1361,8 +1361,8 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-panel" data-pickem-panel="book">
-      <div class="yardline" data-label="Issue Catpoints"></div>
-      <div class="desc" style="margin-bottom:14px;">You're the book &mdash; credit a team's balance for a waiver claim, a trade, a promo, or a correction.</div>
+      <div class="yardline" data-label="Adjust Catpoints"></div>
+      <div class="desc" style="margin-bottom:14px;">You're the book &mdash; credit a team's balance for a waiver claim, a trade, or a promo, or pull Catpoints back out if an issue was made in error.</div>
       <div class="card bet-builder" id="book-issue-builder">
         <div class="row2">
           <div>
@@ -1371,7 +1371,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
           </div>
           <div>
             <label for="book-issue-amount">Amount (&#8353;)</label>
-            <input type="number" id="book-issue-amount" step="1" placeholder="e.g. 5">
+            <input type="number" id="book-issue-amount" step="1" min="0" placeholder="e.g. 5">
           </div>
         </div>
         <div>
@@ -1380,6 +1380,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
         <div class="bet-actions">
           <button class="btn" type="button" id="book-issue-submit">Issue Catpoints</button>
+          <button class="btn ghost decline" type="button" id="book-remove-submit">Remove Catpoints</button>
           <div class="form-status" id="book-issue-status"></div>
         </div>
       </div>
@@ -1978,7 +1979,21 @@ function renderHomeTrendingBets() {
     .sort((a, b) => b.count - a.count)
     .slice(0, 2);
 
-  if (!matchupRows.length && !propRows.length) {
+  // Everything else that's genuinely live action but doesn't fit the two-sided
+  // "percentage of the room on each side" shape above: H2H peer challenges
+  // (prop, parlay duel, bench, shootout, duel, streak, waiver, trade), futures
+  // (not week-scoped, so it's pulled from the full bet list, not `live`), and
+  // the book-style combo parlay (same `type: 'parlay'` as a TD Parlay Duel, but
+  // no teamB -- that's how the two are told apart here). These just get listed
+  // as recent activity instead of a split bar.
+  const isBookComboParlay = b => b.type === 'parlay' && !b.teamB;
+  const otherBets = (LEAGUE_DATA.bets || [])
+    .filter(b => (b.status === 'open' || b.status === 'pending') &&
+      (H2H_BET_TYPES.includes(b.type) || b.type === 'futures' || isBookComboParlay(b)))
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || String(b.id).localeCompare(String(a.id)))
+    .slice(0, 3);
+
+  if (!matchupRows.length && !propRows.length && !otherBets.length) {
     wrap.innerHTML = '<div class="recap-empty">No bets on the board yet this week. <button class="btn ghost" data-nav="pickem" style="margin-left:8px;">Be the first to load up</button></div>';
     return;
   }
@@ -2021,7 +2036,20 @@ function renderHomeTrendingBets() {
       </div>`;
   }).join('');
 
-  wrap.innerHTML = `<div class="tb-board">${matchupHtml}${propHtml}</div>`;
+  const otherKindLabel = b => {
+    if (b.type === 'futures') return 'Futures';
+    if (isBookComboParlay(b)) return 'Parlay';
+    const label = b.status === 'pending' ? 'Awaiting Response' : 'Live';
+    return `H2H Challenge &middot; ${label}`;
+  };
+  const otherHtml = otherBets.map(b => `
+      <div class="tb-row">
+        <div class="tb-kind">${otherKindLabel(b)}</div>
+        <div class="tb-matchup">${b.summary}</div>
+        ${b.stake != null ? `<div class="tb-prop-cap">${cp(b.stake)} on the line</div>` : ''}
+      </div>`).join('');
+
+  wrap.innerHTML = `<div class="tb-board">${matchupHtml}${propHtml}${otherHtml}</div>`;
 }
 
 function teamCard(teamId) {
@@ -2931,20 +2959,29 @@ function mapBetRow(row) {
   };
 }
 
-// ---- The Book: admin panel (issue Catpoints, settle what the auto-grader can't) ----
-async function issueCatpoints(teamId, amount, note) {
+// ---- The Book: admin panel (issue/remove Catpoints, settle what the auto-grader can't) ----
+// `delta` carries the sign -- positive credits a team (a waiver claim, a promo),
+// negative pulls Catpoints back out (undoing an issue made in error). Same ledger
+// row shape either way, just a different sign and note.
+async function issueCatpoints(teamId, delta, note) {
   const statusEl = document.getElementById('book-issue-status');
-  if (!teamId || !amount) return;
+  if (!teamId || !delta) return;
+  const isRemoval = delta < 0;
   const { error } = await supabaseClient.from('catpoints_ledger').insert({
-    team_id: teamId, delta: amount, reason: 'manual_issue',
-    note: note || 'Issued by the book', created_by: currentUser ? currentUser.id : null,
+    team_id: teamId, delta, reason: 'manual_issue',
+    note: note || (isRemoval ? 'Removed by the book' : 'Issued by the book'), created_by: currentUser ? currentUser.id : null,
   });
   if (error) {
     console.error('issueCatpoints failed', error);
-    if (statusEl) { statusEl.textContent = "Couldn't issue that -- try again."; statusEl.className = 'form-status err'; }
+    if (statusEl) { statusEl.textContent = `Couldn't ${isRemoval ? 'remove' : 'issue'} that -- try again.`; statusEl.className = 'form-status err'; }
     return;
   }
-  if (statusEl) { statusEl.textContent = `Issued ${cp(amount)} to ${teamName(teamId)}.`; statusEl.className = 'form-status ok'; }
+  if (statusEl) {
+    statusEl.textContent = isRemoval
+      ? `Removed ${cp(Math.abs(delta))} from ${teamName(teamId)}.`
+      : `Issued ${cp(delta)} to ${teamName(teamId)}.`;
+    statusEl.className = 'form-status ok';
+  }
   await loadCatpoints();
 }
 
@@ -4687,11 +4724,20 @@ if (slipPlaceBtn) slipPlaceBtn.addEventListener('click', () => { placeSlip(); })
 const bookIssueSubmitBtn = document.getElementById('book-issue-submit');
 if (bookIssueSubmitBtn) bookIssueSubmitBtn.addEventListener('click', () => {
   const teamId = document.getElementById('book-issue-team').value;
-  const amount = Number(document.getElementById('book-issue-amount').value);
+  const amount = Math.abs(Number(document.getElementById('book-issue-amount').value));
   const note = document.getElementById('book-issue-note').value.trim();
   const statusEl = document.getElementById('book-issue-status');
   if (!teamId || !amount) { if (statusEl) { statusEl.textContent = 'Pick a team and an amount.'; statusEl.className = 'form-status err'; } return; }
   issueCatpoints(teamId, amount, note);
+});
+const bookRemoveSubmitBtn = document.getElementById('book-remove-submit');
+if (bookRemoveSubmitBtn) bookRemoveSubmitBtn.addEventListener('click', () => {
+  const teamId = document.getElementById('book-issue-team').value;
+  const amount = Math.abs(Number(document.getElementById('book-issue-amount').value));
+  const note = document.getElementById('book-issue-note').value.trim();
+  const statusEl = document.getElementById('book-issue-status');
+  if (!teamId || !amount) { if (statusEl) { statusEl.textContent = 'Pick a team and an amount.'; statusEl.className = 'form-status err'; } return; }
+  issueCatpoints(teamId, -amount, note);
 });
 
 document.addEventListener('click', e => {
