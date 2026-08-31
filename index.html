@@ -174,6 +174,15 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 .team-card .owner { color: var(--ink-dim); font-size: 13px; margin-top: 2px; }
 .team-card .stat-line { margin-top: 12px; font-family: var(--font-mono); font-size: 13px; color: var(--ink-dim); }
 .team-card .stat-line b { color: var(--ink); }
+.team-card-head { display: flex; align-items: center; gap: 12px; }
+.team-card-avatar {
+  position: relative; overflow: hidden; flex-shrink: 0;
+  width: 48px; height: 48px; border-radius: 50%; background: var(--paper-sunken);
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-mono);
+  font-size: 14px; font-weight: 700; color: var(--ink-dim); border: 1px solid var(--line);
+}
+.team-card-head .team-card-name { min-width: 0; }
+.team-card-head h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 11px;
@@ -192,6 +201,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 }
 .standings-lead-rank { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em; color: var(--gold); text-transform: uppercase; font-weight: 700; margin-bottom: 12px; }
 .standings-lead-mono {
+  position: relative; overflow: hidden;
   width: 56px; height: 56px; margin: 0 auto 12px; border-radius: 50%; background: rgba(255,255,255,0.12);
   display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 16px;
   font-weight: 700; color: #f6f8f3; border: 1px solid rgba(255,255,255,0.24);
@@ -209,6 +219,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 }
 .standings-runner-rank { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; color: var(--ink-dim); text-transform: uppercase; font-weight: 700; margin-bottom: 8px; }
 .standings-runner-mono {
+  position: relative; overflow: hidden;
   width: 40px; height: 40px; margin: 0 auto 8px; border-radius: 50%; background: var(--paper-sunken);
   display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px;
   font-weight: 700; color: var(--ink-dim); border: 1px solid var(--line);
@@ -224,6 +235,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 .standings-row:last-child { border-bottom: none; }
 .standings-rank { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.03em; color: var(--ink-dim); width: 30px; flex-shrink: 0; text-transform: uppercase; }
 .standings-monogram {
+  position: relative; overflow: hidden;
   width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: var(--paper-sunken);
   display: flex; align-items: center; justify-content: center; font-family: var(--font-mono);
   font-size: 11px; font-weight: 700; color: var(--ink-dim); border: 1px solid var(--line);
@@ -294,6 +306,13 @@ tbody tr td:first-child, thead tr th:first-child { position: sticky; left: 0; ba
 .back-link:hover { color: var(--gold-strong); }
 .team-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; margin-bottom: 8px; }
 .team-head h2 { font-size: clamp(32px, 5vw, 48px); }
+.team-head-info { display: flex; align-items: center; gap: 16px; }
+.team-head-avatar {
+  position: relative; overflow: hidden; flex-shrink: 0;
+  width: 64px; height: 64px; border-radius: 50%; background: var(--paper-sunken);
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-mono);
+  font-size: 18px; font-weight: 700; color: var(--ink-dim); border: 1px solid var(--line);
+}
 .team-synopsis { color: var(--ink-dim); font-size: 15px; line-height: 1.6; max-width: 72ch; margin: 10px 0 4px; }
 .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 20px 0 32px; }
 .kpi { background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
@@ -1746,7 +1765,7 @@ function renderHomeStandings() {
     return;
   }
   const rows = teams.map(t => ({
-    name: t.name, owner: t.owner || 'Manager TBD',
+    id: t.id, name: t.name, owner: t.owner || 'Manager TBD',
     balance: CATPOINTS_BALANCES.get(t.id) || 0,
     delta: CATPOINTS_WEEKLY_DELTA.get(t.id) || 0,
   })).sort((a, b) => b.balance - a.balance || a.name.localeCompare(b.name));
@@ -1758,7 +1777,7 @@ function renderHomeStandings() {
   let html = `
     <div class="standings-lead">
       <div class="standings-lead-rank">In The Lead</div>
-      <div class="standings-lead-mono">${catpointsMonogram(lead.name)}</div>
+      <div class="standings-lead-mono">${teamAvatarInnerHtml(lead.id, lead.name)}</div>
       <div class="standings-lead-name">${lead.name}</div>
       <div class="standings-lead-owner">${lead.owner}</div>
       <div class="standings-lead-bal"><span class="cp-glyph">&#8353;</span>${formatCatpoints(lead.balance)}</div>
@@ -1769,7 +1788,7 @@ function renderHomeStandings() {
     html += `<div class="standings-pair">${pair.map((r, i) => `
       <div class="standings-runner">
         <div class="standings-runner-rank">${ordinal(i + 2)}</div>
-        <div class="standings-runner-mono">${catpointsMonogram(r.name)}</div>
+        <div class="standings-runner-mono">${teamAvatarInnerHtml(r.id, r.name)}</div>
         <div class="standings-runner-name">${r.name}</div>
         <div class="standings-runner-owner">${r.owner}</div>
         <div class="standings-runner-bal"><span class="cp-glyph">&#8353;</span>${formatCatpoints(r.balance)}</div>
@@ -1781,7 +1800,7 @@ function renderHomeStandings() {
     html += `<div class="standings-board">${rest.map((r, i) => `
       <div class="standings-row">
         <div class="standings-rank">${ordinal(i + 4)}</div>
-        <div class="standings-monogram">${catpointsMonogram(r.name)}</div>
+        <div class="standings-monogram">${teamAvatarInnerHtml(r.id, r.name)}</div>
         <div class="standings-who">
           <div class="standings-name">${r.name}</div>
           <div class="standings-meta">${r.owner} &middot; ${standingsDeltaHtml(r.delta)}</div>
@@ -1908,8 +1927,13 @@ function teamCard(teamId) {
   if (st.championships) badges.push(badge('champ', `${st.championships}× Champ`));
   if (st.sackos) badges.push(badge('sacko', `${st.sackos}× Toilet Bowl`));
   card.innerHTML = `
-    <h3>${t.name}</h3>
-    <div class="owner">${t.owner || 'Manager TBD'}</div>
+    <div class="team-card-head">
+      <div class="team-card-avatar">${teamAvatarInnerHtml(t.id, t.name)}</div>
+      <div class="team-card-name">
+        <h3>${t.name}</h3>
+        <div class="owner">${t.owner || 'Manager TBD'}</div>
+      </div>
+    </div>
     <div class="badge-row">${badges.join('') || '<span style="color:var(--ink-dim);font-size:12px;">No hardware yet</span>'}</div>
     <div class="stat-line mono"><b>${st.wins}-${st.losses}${st.ties ? '-' + st.ties : ''}</b> career &middot; ${pct(st.winPct)} win rate</div>`;
   return card;
@@ -3007,9 +3031,12 @@ function renderTeamDetail(teamId) {
 
   wrap.innerHTML = `
     <div class="team-head">
-      <div>
-        <div class="eyebrow">${t.owner || 'Manager TBD'}</div>
-        <h2>${t.name}</h2>
+      <div class="team-head-info">
+        <div class="team-head-avatar">${teamAvatarInnerHtml(t.id, t.name)}</div>
+        <div>
+          <div class="eyebrow">${t.owner || 'Manager TBD'}</div>
+          <h2>${t.name}</h2>
+        </div>
       </div>
     </div>
     ${synopsisHtml}
