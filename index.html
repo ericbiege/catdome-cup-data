@@ -3512,6 +3512,12 @@ function unlockApp() {
 
 async function bootApp() {
   await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts(), loadTeamLogos()]);
+  // loadNewsPosts() (and setUserBadge(), called earlier from unlockApp()) can
+  // resolve/run before loadTeamLogos() does, since they load in parallel above --
+  // re-render both now that TEAM_LOGO_URL is guaranteed populated, so avatars
+  // don't get stuck showing monograms until the next unrelated re-render.
+  setUserBadge();
+  renderNewsFeed();
   subscribeBets();
   subscribeRecaps();
   subscribeCatpoints();
