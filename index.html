@@ -182,6 +182,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 .badge.champ { background: color-mix(in srgb, var(--gold) 22%, transparent); color: var(--gold-strong); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); }
 .badge.sacko { background: color-mix(in srgb, var(--crimson) 18%, transparent); color: var(--crimson); border: 1px solid color-mix(in srgb, var(--crimson) 40%, transparent); }
 .badge.reg { background: color-mix(in srgb, var(--green-accent) 18%, transparent); color: var(--green-accent); border: 1px solid color-mix(in srgb, var(--green-accent) 40%, transparent); }
+.badge.pending { background: color-mix(in srgb, var(--ink-dim) 22%, transparent); color: var(--ink-dim); border: 1px solid color-mix(in srgb, var(--ink-dim) 40%, transparent); }
 
 /* ---------- home: catpoints standings tracker ---------- */
 .standings-lead {
@@ -624,6 +625,27 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .prop-type-btn:hover { border-color: var(--gold); }
 .prop-type-btn[aria-current="true"] { background: var(--gold); border-color: var(--gold); color: #fff; }
 
+/* ---------- League Action: same sub-tab / prop-toggle pattern as NFL Game Lines ---------- */
+.la-subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.la-subtab-btn {
+  font-family: var(--font-ui); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+  padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.la-subtab-btn:hover { color: var(--ink); border-color: var(--gold); }
+.la-subtab-btn[aria-current="true"] { background: var(--field); border-color: var(--field); color: #fff; }
+.la-subpanel { display: none; }
+.la-subpanel.active { display: block; animation: fade-in 0.2s ease both; }
+
+.la-prop-type-toggle { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.la-prop-type-btn {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  background: var(--paper-sunken); border: 1px solid var(--line); color: var(--ink-dim);
+  padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.la-prop-type-btn:hover { border-color: var(--gold); }
+.la-prop-type-btn[aria-current="true"] { background: var(--gold); border-color: var(--gold); color: #fff; }
+
 .prop-card { background: var(--paper-raised); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px 4px; margin-bottom: 10px; }
 .prop-card-head { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-dim); margin-bottom: 4px; }
 .prop-player-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
@@ -712,6 +734,60 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .form-status.err { color: var(--crimson); }
 .form-status.ok { color: var(--green-accent); }
 
+/* ---------- H2H Challenge: accept / decline / send actions on a bet card ---------- */
+.h2h-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.h2h-actions .btn, .h2h-actions .btn.ghost { padding: 8px 16px; font-size: 12px; }
+.h2h-actions .btn.decline { border-color: var(--crimson); color: var(--crimson); }
+.h2h-actions .btn.decline:hover { background: var(--crimson); color: #fff; }
+.h2h-stake-line { font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); margin-top: 4px; }
+
+/* ---------- News: Twitter-style feed, mobile-first ---------- */
+.news-compose {
+  background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 14px 16px 12px; box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.news-compose-head { display: flex; gap: 12px; align-items: flex-start; }
+.news-compose textarea#news-compose-body {
+  flex: 1; min-height: 64px; resize: vertical; border: none; background: transparent; padding: 6px 0;
+  font-family: var(--font-body); font-size: 15px; line-height: 1.4; color: var(--ink);
+}
+.news-compose textarea#news-compose-body:focus { outline: none; }
+.news-compose-foot { display: flex; align-items: center; justify-content: flex-end; gap: 14px; padding-top: 8px; border-top: 1px solid var(--line); margin-top: 4px; }
+.news-compose-count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); }
+.news-compose .btn { padding: 8px 20px; font-size: 12px; }
+.news-avatar {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
+  background: linear-gradient(155deg, var(--gold), var(--crimson));
+}
+.news-feed { display: flex; flex-direction: column; }
+.news-post { display: flex; gap: 12px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+.news-post:first-child { padding-top: 4px; }
+.news-post-body-wrap { flex: 1; min-width: 0; }
+.news-post-head { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.news-post-name { font-weight: 700; font-size: 14px; color: var(--ink); }
+.news-post-handle, .news-post-dot, .news-post-time { font-size: 13px; color: var(--ink-dim); }
+.news-post-cat {
+  font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--gold-strong); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); border-radius: 999px;
+  padding: 1px 8px; margin-left: 2px;
+}
+.news-post-text { font-size: 15px; line-height: 1.4; margin-top: 2px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.news-post-foot { display: flex; align-items: center; gap: 18px; margin-top: 10px; }
+.news-heat-btn {
+  display: inline-flex; align-items: center; gap: 5px; background: none; border: none; cursor: pointer;
+  color: var(--ink-dim); font-family: var(--font-mono); font-size: 12px; padding: 2px; transition: color 0.15s ease;
+}
+.news-heat-btn:hover { color: var(--gold-strong); }
+.news-heat-btn.mine { color: var(--gold-strong); }
+.news-empty { color: var(--ink-dim); font-style: italic; padding: 24px; text-align: center; border: 1px dashed var(--line); border-radius: var(--radius); }
+@media (max-width: 640px) {
+  .news-avatar { width: 34px; height: 34px; font-size: 13px; }
+  .news-post { padding: 12px 2px; }
+  .news-post-text { font-size: 14.5px; }
+  .news-compose { padding: 12px 12px 10px; }
+}
+
 footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(--ink-dim); font-size: 12px; font-family: var(--font-mono); }
 
 @media (max-width: 640px) {
@@ -776,7 +852,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <button data-nav="pickem">Sportsbook</button>
       <button data-nav="teams">Teams</button>
       <button data-nav="records">Records</button>
-      <button data-nav="recaps">Recaps</button>
+      <button data-nav="recaps">News</button>
     </nav>
   </div>
 </header>
@@ -826,18 +902,79 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-tabs" role="tablist" aria-label="Sportsbook sections">
-      <button type="button" class="pickem-tab-btn" data-pickem-tab="week" aria-current="true">This Week</button>
+      <button type="button" class="pickem-tab-btn" data-pickem-tab="week" aria-current="true">League Action</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="nfl" aria-current="false">NFL Game Lines</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="futures" aria-current="false">Futures</button>
-      <button type="button" class="pickem-tab-btn" data-pickem-tab="props" aria-current="false">Props &amp; Parlay</button>
+      <button type="button" class="pickem-tab-btn" data-pickem-tab="props" aria-current="false">H2H Challenge</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="mybets" aria-current="false">My Bets</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="book" aria-current="false" hidden>The Book</button>
     </div>
 
     <div class="pickem-panel active" data-pickem-panel="week">
-      <div class="yardline" data-label="Weekly Showdown"></div>
-      <div class="desc" style="margin-bottom:14px;">Stake Catpoints against the book on this week's matchups.</div>
-      <div id="weekly-matchups-list" class="matchup-list"></div>
+      <div class="la-subtabs" role="tablist" aria-label="League Action sections">
+        <button type="button" class="la-subtab-btn" data-la-subtab="lines" aria-current="true">Catdome Game Lines</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="td" aria-current="false">TD Scorers</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="passing" aria-current="false">Passing</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="receiving" aria-current="false">Receiving</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="rushing" aria-current="false">Running</button>
+      </div>
+
+      <div class="la-subpanel active" data-la-subpanel="lines">
+        <div class="yardline" data-label="Catdome Game Lines"></div>
+        <div class="desc" style="margin-bottom:14px;">Stake Catpoints against the book on this week's 5 fantasy matchups &mdash; spread, total, and moneyline, same book as NFL Game Lines.</div>
+        <div id="weekly-matchups-list" class="matchup-list"></div>
+      </div>
+
+      <div class="la-subpanel" data-la-subpanel="td">
+        <div class="yardline" data-label="TD Scorers"></div>
+        <div class="desc" style="margin-bottom:14px;">Touchdown-scorer odds for every roster in this week's 5 fantasy matchups &mdash; opens once rosters are set after the draft.</div>
+        <div class="la-prop-type-toggle" data-la-prop-category="td">
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="anytime_td" aria-current="true">Anytime TD</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="first_td" aria-current="false">First TD</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="last_td" aria-current="false">Last TD</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="multi_td" aria-current="false">2+ TDs</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="multi_td_ou" aria-current="false">2+ TDs O/U</button>
+        </div>
+        <div id="la-props-td-list" class="matchup-list"></div>
+      </div>
+
+      <div class="la-subpanel" data-la-subpanel="passing">
+        <div class="yardline" data-label="Passing Props"></div>
+        <div class="desc" style="margin-bottom:14px;">Passing lines for every fantasy QB in the league &mdash; opens once rosters are set after the draft.</div>
+        <div class="la-prop-type-toggle" data-la-prop-category="passing">
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="pass_yds" aria-current="true">Pass Yards</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="pass_yds_ou" aria-current="false">Pass Yards O/U</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="pass_int" aria-current="false">Interceptions</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="pass_int_ou" aria-current="false">Interceptions O/U</button>
+        </div>
+        <div id="la-props-passing-list" class="matchup-list"></div>
+      </div>
+
+      <div class="la-subpanel" data-la-subpanel="receiving">
+        <div class="yardline" data-label="Receiving Props"></div>
+        <div class="desc" style="margin-bottom:14px;">Receiving lines for every fantasy pass-catcher in the league &mdash; opens once rosters are set after the draft.</div>
+        <div class="la-prop-type-toggle" data-la-prop-category="receiving">
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="reception_yds" aria-current="true">Receiving Yards</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="reception_yds_ou" aria-current="false">Receiving Yards O/U</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="receptions" aria-current="false">Receptions</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="receptions_ou" aria-current="false">Receptions O/U</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="reception_long" aria-current="false">Longest Reception</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="reception_long_ou" aria-current="false">Longest Reception O/U</button>
+        </div>
+        <div id="la-props-receiving-list" class="matchup-list"></div>
+      </div>
+
+      <div class="la-subpanel" data-la-subpanel="rushing">
+        <div class="yardline" data-label="Rushing Props"></div>
+        <div class="desc" style="margin-bottom:14px;">Rushing lines for every fantasy ball-carrier in the league &mdash; opens once rosters are set after the draft.</div>
+        <div class="la-prop-type-toggle" data-la-prop-category="rushing">
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="rush_yds" aria-current="true">Rush Yards</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="rush_yds_ou" aria-current="false">Rush Yards O/U</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="rush_long" aria-current="false">Longest Rush</button>
+          <button type="button" class="la-prop-type-btn" data-la-prop-type="rush_long_ou" aria-current="false">Longest Rush O/U</button>
+        </div>
+        <div id="la-props-rushing-list" class="matchup-list"></div>
+      </div>
 
       <div class="yardline" data-label="Waiver Wire Wizard"></div>
       <div class="desc" style="margin-bottom:14px;">Stake Catpoints on your free-agent pickup against theirs.</div>
@@ -1011,9 +1148,10 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-panel" data-pickem-panel="props">
+      <div class="desc" style="margin-bottom:18px;">Stake Catpoints against a friend &mdash; not the book. Build a challenge below, add it to your slip, then hit <b>Send Challenge</b> from My Bets to text it over. Nothing's live (and no Catpoints move) until they accept.</div>
       <div class="props-parlay-grid">
         <div>
-          <div class="yardline" data-label="Player Props &middot; Outscore Their Guy"></div>
+          <div class="yardline" data-label="Outscore Their Guy"></div>
           <div class="desc" style="margin-bottom:14px;">Pick a player off your roster to outscore a player off theirs. Fantasy points only, that week only.</div>
           <div class="card bet-builder" id="prop-builder">
             <div class="row2">
@@ -1028,7 +1166,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
             </div>
             <div class="row2">
               <div>
-                <label for="prop-team-b">Their Team</label>
+                <label for="prop-team-b">Challenge</label>
                 <select id="prop-team-b"></select>
               </div>
               <div>
@@ -1044,9 +1182,19 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
 
         <div>
-          <div class="yardline" data-label="Anytime TD Parlay"></div>
-          <div class="desc" style="margin-bottom:14px;">Stack 2&ndash;4 players you think all find the end zone the same week. Bigger parlay, bigger multiplier on your stake.</div>
+          <div class="yardline" data-label="TD Parlay Duel"></div>
+          <div class="desc" style="margin-bottom:14px;">Stack 2&ndash;4 players you think all find the end zone this week, then challenge a friend who thinks at least one whiffs. All legs hit, you win the stake &mdash; anyone misses, they do.</div>
           <div class="card bet-builder" id="parlay-builder">
+            <div class="row2">
+              <div>
+                <label for="parlay-team-a">Your Team</label>
+                <select id="parlay-team-a"></select>
+              </div>
+              <div>
+                <label for="parlay-team-b">Challenge</label>
+                <select id="parlay-team-b"></select>
+              </div>
+            </div>
             <div id="parlay-legs">
               <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
               <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
@@ -1062,11 +1210,24 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
           </div>
         </div>
       </div>
+
+      <div class="yardline" data-label="More H2H Ideas"></div>
+      <div class="idea-grid">
+        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Bench Battle Duel</h4><div class="desc" style="font-size:13px;">Challenge a friend head-to-head on who strands fewer points on their bench this week &mdash; peer stakes on the existing Bench Points Bowl math.</div></div>
+        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Waiver Wire Duel</h4><div class="desc" style="font-size:13px;">Both of you name a free-agent pickup before waivers process. Whoever's guy scores more the rest of the season wins the stake.</div></div>
+        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Full Slate Shootout</h4><div class="desc" style="font-size:13px;">Skip your actual matchup &mdash; challenge any manager in the league to a side bet on total team score this week, opponent be damned.</div></div>
+        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Position Duel</h4><div class="desc" style="font-size:13px;">RB1 vs. RB1, WR2 vs. WR2 &mdash; pick a roster slot and let two guys at the same position settle it.</div></div>
+        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Streak Survivor</h4><div class="desc" style="font-size:13px;">A running side bet between two managers &mdash; loser of the week owes double next week, "double or nothing" style, until someone folds.</div></div>
+      </div>
     </div>
 
     <div class="pickem-panel" data-pickem-panel="mybets">
+      <div class="yardline" data-label="Challenges Awaiting You"></div>
+      <div class="desc" style="margin-bottom:14px;">H2H challenges a friend sent you. Accept to lock in the stake on both sides, decline to pass &mdash; nothing moves until you answer.</div>
+      <div id="incoming-challenges-list"></div>
+
       <div class="yardline" data-label="My Wagers"></div>
-      <div class="desc" style="margin-bottom:14px;">Every bet you've staked against the book, open or settled. Balances update automatically once a week's final.</div>
+      <div class="desc" style="margin-bottom:14px;">Every bet you've staked, against the book or a friend, open or settled. Balances update automatically once a week's final.</div>
       <div id="build-your-bets-list"></div>
     </div>
 
@@ -1160,10 +1321,27 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     <div class="section-head">
       <div>
         <div class="eyebrow">The Press Box</div>
-        <h2>Weekly Recaps</h2>
-        <div class="desc">Whoever had the best (or worst) week writes it up. Anyone in the league can add one below.</div>
+        <h2>News</h2>
+        <div class="desc">Bet results, waiver moves, trades, weekly outcomes &mdash; auto-posted as they happen, plus whatever the league wants to say about it.</div>
       </div>
     </div>
+
+    <div class="news-compose" id="news-compose-wrap">
+      <div class="news-compose-head">
+        <div class="news-avatar" id="news-compose-avatar">?</div>
+        <textarea id="news-compose-body" placeholder="What happened this week?" maxlength="280"></textarea>
+      </div>
+      <div class="news-compose-foot">
+        <span class="news-compose-count" id="news-compose-count">280</span>
+        <button class="btn" type="button" id="news-compose-submit">Post</button>
+      </div>
+      <div class="form-status" id="news-compose-status"></div>
+    </div>
+
+    <div class="news-feed" id="news-feed-list"></div>
+
+    <div class="yardline" data-label="Weekly Recaps" style="margin-top:36px;"></div>
+    <div class="desc" style="margin-bottom:14px;">The long-form version &mdash; whoever had the best (or worst) week writes it up. Anyone in the league can add one below.</div>
     <div class="recap-list" id="recaps-list"></div>
     <div class="recap-form" id="recap-form-wrap">
       <h3>Write a recap</h3>
@@ -1371,7 +1549,7 @@ function showView(view) {
   if (view === 'teams') renderTeamsGrid();
   if (view === 'team') renderTeamDetail(activeTeamId);
   if (view === 'records') { renderRecords(); renderStandings(); }
-  if (view === 'recaps') renderRecaps();
+  if (view === 'recaps') { renderRecaps(); renderNewsFeed(); }
   if (!pendingHighlightId) window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 }
 
@@ -1648,7 +1826,7 @@ function renderHomeTrendingBets() {
     const isTotal = f.familyMarket === 'total';
     const nameX = isTotal ? 'Over' : teamName(teamX), nameY = isTotal ? 'Under' : teamName(teamY);
     const pctA = Math.round((f.countA / f.total) * 100), pctB = 100 - pctA;
-    const kind = `${f.type === 'nfl' ? 'NFL Game Line' : 'Weekly Showdown'} &middot; ${marketLabel[f.familyMarket] || f.familyMarket}`;
+    const kind = `${f.type === 'nfl' ? 'NFL Game Line' : 'Catdome Game Line'} &middot; ${marketLabel[f.familyMarket] || f.familyMarket}`;
     return `
       <div class="tb-row">
         <div class="tb-kind">${kind}</div>
@@ -1821,7 +1999,7 @@ function buildPropText() {
   const playerA = document.getElementById('prop-player-a').value.trim() || '(your player)';
   const playerB = document.getElementById('prop-player-b').value.trim() || '(their player)';
   const week = currentLeagueWeek();
-  return `\u{1F3AF} CATDOME CUP PLAYER PROP \u{1F3AF}\nWeek ${week}: ${playerA} (${teamA}) vs ${playerB} (${teamB})\nWhoever scores more fantasy points wins the bet.\n— sent from Catdome Cup Pick 'Em`;
+  return `\u{1F3AF} CATDOME CUP H2H CHALLENGE \u{1F3AF}\nWeek ${week}: ${playerA} (${teamA}) vs ${playerB} (${teamB})\nWhoever scores more fantasy points wins the bet.\n— sent from Catdome Cup H2H Challenge`;
 }
 function updatePropPreview() {
   const el = document.getElementById('prop-preview');
@@ -1842,13 +2020,15 @@ function buildParlayText() {
   const legs = parlayLegs();
   const n = document.querySelectorAll('#parlay-legs .parlay-leg').length;
   const week = currentLeagueWeek();
+  const teamBEl = document.getElementById('parlay-team-b');
+  const oppName = teamBEl ? teamName(teamBEl.value) : 'you';
   const legLines = legs.length ? legs.map((l, i) => `  ${i + 1}. ${l} — Anytime TD`).join('\n') : '  (add your legs above)';
-  return `\u{1F3C8} CATDOME CUP TD PARLAY \u{1F3C8}\nWeek ${week} — ${n}-leg parlay (${parlayMultiplier(n)}x bragging units)\n${legLines}\nAll legs have to hit for legend status.\n— sent from Catdome Cup Pick 'Em`;
+  return `\u{1F3C8} CATDOME CUP H2H TD PARLAY DUEL \u{1F3C8}\nWeek ${week} — ${n}-leg parlay\n${legLines}\nI'm betting all of these hit this week. ${oppName}, you in on the other side?\n— sent from Catdome Cup H2H Challenge`;
 }
 function updateParlayPreview() {
   const n = document.querySelectorAll('#parlay-legs .parlay-leg').length;
   const multEl = document.getElementById('parlay-multiplier');
-  if (multEl) multEl.textContent = `${n}-leg parlay → ${parlayMultiplier(n)}x bragging-rights units`;
+  if (multEl) multEl.textContent = `${n}-leg parlay — all ${n} have to hit for you to win`;
   const previewEl = document.getElementById('parlay-preview');
   if (previewEl) previewEl.textContent = buildParlayText();
 }
@@ -1890,8 +2070,14 @@ function updateBenchPreview() {
   if (el) el.textContent = buildBenchText();
 }
 
-const BET_STATUS_LABELS = { open: 'Open', settled: 'Settled' };
-const BET_STATUS_BADGE = { open: 'champ', settled: 'reg' };
+const BET_STATUS_LABELS = { open: 'Open', settled: 'Settled', pending: 'Awaiting Response', declined: 'Declined' };
+const BET_STATUS_BADGE = { open: 'champ', settled: 'reg', pending: 'pending', declined: 'sacko' };
+// H2H (peer-vs-peer) bet types placed through the H2H Challenge tab -- these need
+// an opponent to accept before anything's live, unlike every other bet type in the
+// slip which goes straight to the book. Detected by type, not by teamB alone, since
+// plain book bets (waiver/trade/weekly/nfl) also carry a team_a/team_b pair.
+const H2H_BET_TYPES = ['prop', 'parlay'];
+function isH2HItem(item) { return H2H_BET_TYPES.includes(item.type) && item.teamA && item.teamB; }
 
 // Only you can issue Catpoints out of nowhere or settle a bet the auto-grader can't
 // reach -- gated client-side by your login email (the database enforces the "issue"
@@ -2205,23 +2391,32 @@ async function placeSlip() {
   const placeBtn = document.getElementById('slip-place-btn');
   if (placeBtn) placeBtn.disabled = true;
   if (statusEl) { statusEl.textContent = ''; statusEl.className = 'form-status'; }
+  let placedH2HId = null;
   for (const { item, stake } of stakes) {
+    const h2h = isH2HItem(item);
     const payout = slipPayoutFor(item, stake);
     const betId = makeBetId();
     const row = {
-      id: betId, type: item.type, summary: item.summary, bet_text: item.text, status: 'open',
+      // H2H challenges start life as 'pending' -- nothing's live and no Catpoints
+      // move until the opponent (team_b) accepts via acceptChallenge().
+      id: betId, type: item.type, summary: item.summary, bet_text: item.text, status: h2h ? 'pending' : 'open',
       placed_by: currentActingTeamId, team_a: item.teamA || null, team_b: item.teamB || null,
       week: item.week || null, market: item.market || null, threshold: item.threshold ?? null,
       player_a: item.playerA || null, player_b: item.playerB || null,
       stake, odds: item.payoutMultiplier ? null : item.odds, payout_multiplier: item.payoutMultiplier || null,
-      potential_payout: payout,
+      potential_payout: h2h ? stake * 2 : payout,
     };
     const { data, error } = await supabaseClient.from('bets').insert(row).select().single();
     if (error) { console.error('placeSlip bet insert failed', error); showToast("Couldn't place one of your bets — try again."); continue; }
-    const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
-      team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', bet_id: betId, note: item.summary,
-    });
-    if (ledgerErr) console.error('stake debit failed', ledgerErr);
+    if (!h2h) {
+      const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
+        team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', bet_id: betId, note: item.summary,
+      });
+      if (ledgerErr) console.error('stake debit failed', ledgerErr);
+    } else {
+      placedH2HId = betId;
+      postNewsAuto(`${teamName(currentActingTeamId)} sent an H2H challenge: ${stripEntities(item.summary)} for ${cp(stake)}.`, 'bet_result', currentActingTeamId);
+    }
     LEAGUE_DATA.bets = [...(LEAGUE_DATA.bets || []), mapBetRow(data)];
   }
   slip = [];
@@ -2229,7 +2424,7 @@ async function placeSlip() {
   if (placeBtn) placeBtn.disabled = false;
   await loadCatpoints();
   refreshBetViews();
-  showToast('Bet placed — good luck!');
+  showToast(placedH2HId ? 'Challenge sent to the slip — hit Send Challenge in My Bets to text it over.' : 'Bet placed — good luck!');
 }
 
 function renderMyWagers() {
@@ -2256,9 +2451,16 @@ function renderMyWagers() {
         : b.result === 'push' ? 'Stake refunded' : `-${cp(b.stake || 0)}`;
       const label = b.result === 'win' ? 'Won' : b.result === 'push' ? 'Push' : 'Lost';
       resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}</div>`;
+    } else if (b.status === 'pending') {
+      resultHtml = `<div class="bet-ledger-result">Waiting on ${teamName(b.teamB)} to accept.</div>`;
+    } else if (b.status === 'declined') {
+      resultHtml = `<div class="bet-ledger-result">${teamName(b.teamB)} declined &mdash; no Catpoints moved.</div>`;
     } else if (b.needsReview) {
       resultHtml = '<div class="bet-ledger-result">Flagged for the book to review.</div>';
     }
+    const sendHtml = (b.status === 'pending' && H2H_BET_TYPES.includes(b.type))
+      ? `<div class="h2h-actions"><button class="btn ghost" type="button" data-send-challenge="${b.id}">Send Challenge</button></div>`
+      : '';
     return `
     <div class="card bet-ledger-row" data-bet-id="${b.id}">
       <div class="bet-ledger-top">
@@ -2268,8 +2470,77 @@ function renderMyWagers() {
       <div class="bet-ledger-summary">${b.summary}</div>
       ${stakeHtml}
       ${resultHtml}
+      ${sendHtml}
     </div>`;
   }).join('');
+}
+
+// ---- H2H Challenge: incoming challenges awaiting your accept/decline ----
+function renderIncomingChallenges() {
+  const wrap = document.getElementById('incoming-challenges-list');
+  if (!wrap) return;
+  if (!currentActingTeamId) { wrap.innerHTML = '<div class="recap-empty">Sign in and pick your team to see challenges sent to you.</div>'; return; }
+  const incoming = (LEAGUE_DATA.bets || [])
+    .filter(b => b.status === 'pending' && b.teamB === currentActingTeamId && H2H_BET_TYPES.includes(b.type))
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  if (!incoming.length) { wrap.innerHTML = '<div class="recap-empty">No pending challenges right now.</div>'; return; }
+  wrap.innerHTML = incoming.map(b => `
+    <div class="card bet-ledger-row" data-bet-id="${b.id}">
+      <div class="bet-ledger-top">
+        <span class="badge pending">Challenge from ${teamName(b.placedBy)}</span>
+        <span class="bet-ledger-date mono">${b.createdAt}</span>
+      </div>
+      <div class="bet-ledger-summary">${b.summary}</div>
+      <div class="h2h-stake-line">You each stake ${cp(b.stake)} &mdash; winner takes ${cp((b.stake || 0) * 2)}.</div>
+      <div class="h2h-actions">
+        <button class="btn" type="button" data-accept-challenge="${b.id}">Accept</button>
+        <button class="btn ghost decline" type="button" data-decline-challenge="${b.id}">Decline</button>
+      </div>
+    </div>`).join('');
+}
+
+async function acceptChallenge(betId) {
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  if (!bet || bet.status !== 'pending') return;
+  const stake = Number(bet.stake) || 0;
+  const myBalance = CATPOINTS_BALANCES.get(currentActingTeamId) || 0;
+  if (stake > myBalance) { showToast(`You've only got ${cp(myBalance)} — can't cover this stake.`); return; }
+  const { data, error } = await supabaseClient.from('bets')
+    .update({ status: 'open', accepted_by: currentActingTeamId, accepted_at: new Date().toISOString() })
+    .eq('id', betId).eq('status', 'pending').select().single();
+  if (error) { console.error('acceptChallenge failed', error); showToast("Couldn't accept that challenge — try again."); return; }
+  const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert([
+    { team_id: bet.placedBy, delta: -stake, reason: 'bet_stake', bet_id: betId, note: bet.summary },
+    { team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', bet_id: betId, note: bet.summary },
+  ]);
+  if (ledgerErr) console.error('challenge stake debit failed', ledgerErr);
+  const idx = (LEAGUE_DATA.bets || []).findIndex(b => b.id === betId);
+  if (idx !== -1) LEAGUE_DATA.bets[idx] = mapBetRow(data);
+  postNewsAuto(`${teamName(currentActingTeamId)} accepted ${teamName(bet.placedBy)}'s H2H challenge: ${stripEntities(bet.summary)}. ${cp(stake)} apiece, winner takes ${cp(stake * 2)}.`, 'bet_result', currentActingTeamId);
+  await loadCatpoints();
+  refreshBetViews();
+  showToast('Challenge accepted — good luck!');
+}
+
+async function declineChallenge(betId) {
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  if (!bet || bet.status !== 'pending') return;
+  const { data, error } = await supabaseClient.from('bets')
+    .update({ status: 'declined', declined_by: currentActingTeamId })
+    .eq('id', betId).eq('status', 'pending').select().single();
+  if (error) { console.error('declineChallenge failed', error); showToast("Couldn't decline that challenge — try again."); return; }
+  const idx = (LEAGUE_DATA.bets || []).findIndex(b => b.id === betId);
+  if (idx !== -1) LEAGUE_DATA.bets[idx] = mapBetRow(data);
+  refreshBetViews();
+  showToast('Challenge declined.');
+}
+
+function sendChallenge(betId, btn) {
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  if (!bet) return;
+  const link = `${window.location.origin}${window.location.pathname}#/pickem/accept/${betId}`;
+  const text = `${bet.text || bet.summary}\n\nAccept it here: ${link}`;
+  shareChallenge(text, btn);
 }
 
 // Bet data now surfaces in two places -- the working list on the Sportsbook page
@@ -2277,6 +2548,7 @@ function renderMyWagers() {
 // those is actually on screen.
 function refreshBetViews() {
   renderMyWagers();
+  renderIncomingChallenges();
   if (isAdmin()) renderAdminPanel();
   const teamView = document.getElementById('view-team');
   if (teamView && teamView.classList.contains('active') && activeTeamId) {
@@ -2342,7 +2614,12 @@ async function settleBetManually(betId, outcome) {
   const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
   if (!bet) return;
   const stake = Number(bet.stake) || 0;
-  const payout = outcome === 'win' ? Number(bet.potentialPayout ?? stake) : stake;
+  // A peer-accepted H2H challenge has BOTH sides' stakes already debited (at
+  // acceptChallenge() time) -- so the winner takes both stakes (2x), and a push
+  // refunds each side their own stake back. A book bet only ever had placedBy's
+  // stake at risk, so it keeps the original odds-based payout math.
+  const isPeer = !!bet.acceptedBy;
+  const payout = isPeer ? stake * 2 : (outcome === 'win' ? Number(bet.potentialPayout ?? stake) : stake);
   const winnerTeamId = outcome === 'loss' ? bet.teamB : outcome === 'win' ? bet.teamA : null;
   const { data, error } = await supabaseClient.from('bets')
     .update({
@@ -2351,7 +2628,17 @@ async function settleBetManually(betId, outcome) {
     })
     .eq('id', betId).eq('status', 'open').select().single();
   if (error) { console.error('settleBetManually failed', error); showToast("Couldn't settle that bet — try again."); return; }
-  if (outcome === 'win' || outcome === 'push') {
+  if (isPeer) {
+    const credits = outcome === 'push'
+      ? [{ team_id: bet.placedBy, delta: stake }, { team_id: bet.teamB, delta: stake }]
+      : [{ team_id: outcome === 'win' ? bet.placedBy : bet.teamB, delta: payout }];
+    const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert(
+      credits.map(c => ({ team_id: c.team_id, delta: c.delta, reason: outcome === 'push' ? 'bet_push' : 'bet_win', bet_id: betId, note: `H2H challenge settled: ${outcome}`, created_by: currentUser ? currentUser.id : null }))
+    );
+    if (ledgerErr) console.error('H2H settle credit failed', ledgerErr);
+    const winnerName = outcome === 'push' ? null : teamName(outcome === 'win' ? bet.placedBy : bet.teamB);
+    if (winnerName) postNewsAuto(`${winnerName} won an H2H challenge for ${cp(payout)}: ${stripEntities(bet.summary)}.`, 'bet_result', outcome === 'win' ? bet.placedBy : bet.teamB);
+  } else if (outcome === 'win' || outcome === 'push') {
     const walletTeamId = bet.placedBy || bet.teamA;
     if (walletTeamId) {
       const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
@@ -2360,6 +2647,7 @@ async function settleBetManually(betId, outcome) {
       });
       if (ledgerErr) console.error('settle credit failed', ledgerErr);
     }
+    if (outcome === 'win' && walletTeamId) postNewsAuto(`${teamName(walletTeamId)} cashed a ${cp(payout)} bet with the book: ${stripEntities(bet.summary)}.`, 'bet_result', walletTeamId);
   }
   const idx = (LEAGUE_DATA.bets || []).findIndex(b => b.id === betId);
   if (idx !== -1) LEAGUE_DATA.bets[idx] = mapBetRow(data);
@@ -2372,7 +2660,7 @@ function renderAdminPanel() {
   const wrap = document.getElementById('book-settle-list');
   if (!wrap) return;
   const needsBook = (LEAGUE_DATA.bets || []).filter(b =>
-    b.status === 'open' && (b.needsReview || ['waiver', 'trade', 'parlay', 'futures'].includes(b.type))
+    b.status === 'open' && (b.needsReview || ['waiver', 'trade', 'parlay', 'futures', 'prop'].includes(b.type))
   );
   if (!needsBook.length) {
     wrap.innerHTML = '<div class="recap-empty">Nothing waiting on you right now.</div>';
@@ -2480,12 +2768,15 @@ function renderPickEm() {
   renderCatpointsChip();
   renderSlip();
   renderMyWagers();
+  renderIncomingChallenges();
   renderFuturesBoard('futures-top3-board', 'top3');
   renderFuturesBoard('futures-sacko-board', 'last');
   renderWeeklyMatchups();
   renderNflGames();
   populateTeamSelect('prop-team-a', 0);
   populateTeamSelect('prop-team-b', 1);
+  populateTeamSelect('parlay-team-a', 0);
+  populateTeamSelect('parlay-team-b', 1);
   populateTeamSelect('waiver-team-a', 0);
   populateTeamSelect('waiver-team-b', 1);
   populateTeamSelect('trade-team-a', 0);
@@ -3093,6 +3384,16 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// Bet summaries are built with a handful of named HTML entities (for display in
+// innerHTML contexts) and occasionally a stray tag -- decode/strip those before
+// reusing a summary as plain text (e.g. an auto-generated News post body).
+function stripEntities(s) {
+  return String(s).replace(/<[^>]+>/g, '')
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–').replace(/&middot;/g, '·')
+    .replace(/&rsquo;/g, '’').replace(/&lsquo;/g, '‘').replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
 /* ================= Supabase: auth, profiles, live data ================= */
 const SUPABASE_URL = 'https://snpnapngocinzpkjeyyn.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_6VolhQsfcvU-UIpDojTO0Q_vY3MpEOs';
@@ -3113,13 +3414,16 @@ function setUserBadge() {
   const badge = document.getElementById('user-badge');
   const teamEl = document.getElementById('user-badge-team');
   if (!badge || !teamEl) return;
+  const composeAvatar = document.getElementById('news-compose-avatar');
   if (currentProfile) {
     teamEl.textContent = teamName(currentProfile.team_id);
     badge.hidden = false;
     const authorInput = document.getElementById('recap-author');
     if (authorInput && !authorInput.value) authorInput.value = currentProfile.display_name || teamName(currentProfile.team_id);
+    if (composeAvatar) composeAvatar.textContent = catpointsMonogram(teamName(currentProfile.team_id));
   } else {
     badge.hidden = true;
+    if (composeAvatar) composeAvatar.textContent = '?';
   }
   renderCatpointsChip();
 }
@@ -3161,13 +3465,14 @@ function unlockApp() {
 }
 
 async function bootApp() {
-  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps()]);
+  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts()]);
   subscribeBets();
   subscribeRecaps();
   subscribeCatpoints();
   subscribeWeeklyMatchups();
   subscribeNflGames();
   subscribeNflProps();
+  subscribeNewsPosts();
   navigate(window.location.hash);
 }
 
@@ -3327,6 +3632,54 @@ document.querySelectorAll('.prop-type-toggle').forEach(toggle => {
     toggle.querySelectorAll('[data-prop-type]').forEach(b => b.setAttribute('aria-current', b === btn ? 'true' : 'false'));
     NFL_PROP_VIEW[category] = btn.dataset.propType;
     renderPropCategory(category);
+  });
+});
+
+// League Action sub-tabs: Catdome Game Lines / TD Scorers / Passing / Receiving / Running.
+// Same pattern as the NFL sub-tabs above, kept on separate classes/data-attrs
+// (.la-subtab-btn / .la-subpanel) so the two tab groups never cross-toggle.
+const laSubtabBar = document.querySelector('.la-subtabs');
+if (laSubtabBar) laSubtabBar.addEventListener('click', e => {
+  const tabBtn = e.target.closest('[data-la-subtab]');
+  if (!tabBtn) return;
+  const tab = tabBtn.dataset.laSubtab;
+  laSubtabBar.querySelectorAll('[data-la-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
+  document.querySelectorAll('.la-subpanel').forEach(p => p.classList.toggle('active', p.dataset.laSubpanel === tab));
+});
+
+// League Action fantasy props: TD Scorers / Passing / Receiving / Running for this
+// week's 5 fantasy matchups. Pre-draft there's no roster data to grade against, so
+// every category renders a "not yet" empty state -- but the toggle/render plumbing
+// below is built to match renderPropCategory()/PROP_MARKET_DEFS exactly, so once
+// rosters exist (post-draft) this just needs LEAGUE_DATA.leagueActionProps populated
+// from a synced table (same shape as nfl_player_props, keyed to a fantasy matchup
+// instead of an NFL game) and it renders identically to NFL Game Lines.
+const LA_PROP_VIEW = { td: 'anytime_td', passing: 'pass_yds', receiving: 'reception_yds', rushing: 'rush_yds' };
+const LA_PROP_LABELS = { td: 'TD Scorers', passing: 'Passing', receiving: 'Receiving', rushing: 'Running' };
+const LA_SUBPANEL_LIST_ID = { td: 'la-props-td-list', passing: 'la-props-passing-list', receiving: 'la-props-receiving-list', rushing: 'la-props-rushing-list' };
+
+function renderLaPropCategory(category) {
+  const wrap = document.getElementById(LA_SUBPANEL_LIST_ID[category]);
+  if (!wrap) return;
+  const rows = (LEAGUE_DATA.leagueActionProps || []).filter(p => p.market === LA_PROP_VIEW[category]);
+  if (!rows.length) {
+    wrap.innerHTML = `<div class="matchup-empty">${LA_PROP_LABELS[category]} lines open once rosters are set after the draft &mdash; then this mirrors NFL Game Lines exactly, powered by the same weekly ESPN sync.</div>`;
+    return;
+  }
+  // Post-draft: reuse propItemFromId()/renderPropCategory()'s card markup once
+  // leagueActionProps rows exist -- left as a stub since nothing populates
+  // LEAGUE_DATA.leagueActionProps yet.
+}
+Object.keys(LA_PROP_VIEW).forEach(renderLaPropCategory);
+
+document.querySelectorAll('.la-prop-type-toggle').forEach(toggle => {
+  toggle.addEventListener('click', e => {
+    const btn = e.target.closest('[data-la-prop-type]');
+    if (!btn) return;
+    const category = toggle.dataset.laPropCategory;
+    toggle.querySelectorAll('[data-la-prop-type]').forEach(b => b.setAttribute('aria-current', b === btn ? 'true' : 'false'));
+    LA_PROP_VIEW[category] = btn.dataset.laPropType;
+    renderLaPropCategory(category);
   });
 });
 
@@ -3761,6 +4114,7 @@ if (propPlaceBtn) propPlaceBtn.addEventListener('click', () => {
   if (!requireActingTeam(statusEl)) return;
   const propWeek = currentLeagueWeek();
   const propTeamA = document.getElementById('prop-team-a').value, propTeamB = document.getElementById('prop-team-b').value;
+  if (propTeamA === propTeamB) { statusEl.textContent = "Pick someone to challenge — can't challenge yourself."; statusEl.className = 'form-status err'; return; }
   addToSlip({
     type: 'prop',
     summary: `${pa} vs ${pb} &mdash; Player Prop, Week ${propWeek}`,
@@ -3799,13 +4153,19 @@ if (parlayPlaceBtn) parlayPlaceBtn.addEventListener('click', () => {
   const statusEl = document.getElementById('parlay-status');
   if (parlayLegs().length < 2) { statusEl.textContent = 'Add at least 2 legs.'; statusEl.className = 'form-status err'; return; }
   if (!requireActingTeam(statusEl)) return;
+  const parlayTeamA = document.getElementById('parlay-team-a').value, parlayTeamB = document.getElementById('parlay-team-b').value;
+  if (parlayTeamA === parlayTeamB) { statusEl.textContent = "Pick someone to challenge — can't challenge yourself."; statusEl.className = 'form-status err'; return; }
   const parlayN = document.querySelectorAll('#parlay-legs .parlay-leg').length;
   const parlayWk = currentLeagueWeek();
   addToSlip({
+    // No payoutMultiplier here on purpose: an H2H challenge is even money (winner
+    // takes both stakes at settlement, see settleBetManually), not a book-odds
+    // multiplier -- leaving odds/multiplier unset makes the slip preview show
+    // "to win {stake}" via americanOddsPayout's odds=0 fallback, which matches.
     type: 'parlay',
-    summary: `${parlayN}-leg TD Parlay, Week ${parlayWk} &mdash; ${parlayLegs().join(', ')}`,
+    summary: `${parlayN}-leg TD Parlay Duel vs ${teamName(parlayTeamB)}, Week ${parlayWk} &mdash; ${parlayLegs().join(', ')}`,
     text: buildParlayText(),
-    week: parlayWk, payoutMultiplier: Number(parlayMultiplier(parlayN)),
+    teamA: parlayTeamA, teamB: parlayTeamB, week: parlayWk,
   });
   statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
@@ -3916,6 +4276,15 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('click', e => {
+  const acceptBtn = e.target.closest('[data-accept-challenge]');
+  const declineBtn = e.target.closest('[data-decline-challenge]');
+  const sendBtn = e.target.closest('[data-send-challenge]');
+  if (acceptBtn) { acceptBtn.disabled = true; acceptChallenge(acceptBtn.dataset.acceptChallenge); }
+  else if (declineBtn) { declineBtn.disabled = true; declineChallenge(declineBtn.dataset.declineChallenge); }
+  else if (sendBtn) { sendChallenge(sendBtn.dataset.sendChallenge, sendBtn); }
+});
+
+document.addEventListener('click', e => {
   const removeBtn = e.target.closest('.bet-ledger-remove');
   if (!removeBtn) return;
   const row = removeBtn.closest('.bet-ledger-row');
@@ -3967,6 +4336,123 @@ function subscribeRecaps() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'recaps' }, () => { loadRecaps(); })
     .subscribe();
 }
+
+/* ================= News: Twitter-style feed ================= */
+const NEWS_CATEGORY_LABELS = {
+  bet_result: 'Bet Result', waiver: 'Waiver Wire', trade: 'Trade', game_result: 'Game Result', general: 'League Chatter',
+};
+
+function mapNewsRow(row) {
+  return {
+    id: row.id, category: row.category || 'general', teamId: row.team_id || null,
+    author: row.author, body: row.body, auto: !!row.auto, heat: Number(row.heat) || 0,
+    createdAt: row.created_at,
+  };
+}
+
+function newsRelativeTime(iso) {
+  if (!iso) return '';
+  const ms = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+}
+
+async function loadNewsPosts() {
+  const { data, error } = await supabaseClient.from('news_posts').select('*').order('created_at', { ascending: false }).limit(100);
+  if (error) { console.error('loadNewsPosts failed', error); return; }
+  LEAGUE_DATA.news = (data || []).map(mapNewsRow);
+  renderNewsFeed();
+}
+
+function subscribeNewsPosts() {
+  supabaseClient.channel('news-posts-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'news_posts' }, () => { loadNewsPosts(); })
+    .subscribe();
+}
+
+function renderNewsFeed() {
+  const wrap = document.getElementById('news-feed-list');
+  if (!wrap) return;
+  const posts = LEAGUE_DATA.news || [];
+  if (!posts.length) { wrap.innerHTML = '<div class="news-empty">No news yet &mdash; bet results, waiver moves, and trades will post here automatically. Or just say something below.</div>'; return; }
+  wrap.innerHTML = posts.map(p => {
+    const name = p.teamId ? teamName(p.teamId) : (p.author || 'Catdome Cup');
+    const handle = p.teamId ? `@${p.teamId.toLowerCase()}` : '@catdomecup';
+    const mono = catpointsMonogram(name);
+    const heatClass = p.heat > 0 ? 'mine' : '';
+    return `
+    <div class="news-post" data-news-id="${p.id}">
+      <div class="news-avatar">${escapeHtml(mono)}</div>
+      <div class="news-post-body-wrap">
+        <div class="news-post-head">
+          <span class="news-post-name">${escapeHtml(name)}</span>
+          <span class="news-post-handle">${handle}</span>
+          <span class="news-post-dot">&middot;</span>
+          <span class="news-post-time">${newsRelativeTime(p.createdAt)}</span>
+          <span class="news-post-cat">${NEWS_CATEGORY_LABELS[p.category] || 'League Chatter'}</span>
+        </div>
+        <div class="news-post-text">${escapeHtml(p.body)}</div>
+        <div class="news-post-foot">
+          <button class="news-heat-btn ${heatClass}" type="button" data-heat="${p.id}">&#128293; ${p.heat || ''}</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function postNews(body, category, teamId, auto) {
+  const id = 'news_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const row = {
+    id, category: category || 'general', team_id: teamId || null,
+    author: auto ? 'Catdome Cup' : (currentProfile ? (currentProfile.display_name || teamName(currentProfile.team_id)) : 'Catdome Cup'),
+    body, auto: !!auto,
+  };
+  const { error } = await supabaseClient.from('news_posts').insert(row);
+  if (error) { console.error('postNews failed', error); return false; }
+  await loadNewsPosts();
+  return true;
+}
+
+// System-generated announcements (bet settled, challenge sent/accepted, etc).
+// Best-effort and non-blocking -- a failure here should never interrupt the
+// actual bet/challenge flow that triggered it.
+function postNewsAuto(body, category, teamId) {
+  postNews(body, category, teamId, true).catch(e => console.error('postNewsAuto failed', e));
+}
+
+document.addEventListener('click', e => {
+  const heatBtn = e.target.closest('[data-heat]');
+  if (!heatBtn) return;
+  const post = (LEAGUE_DATA.news || []).find(p => p.id === heatBtn.dataset.heat);
+  if (!post) return;
+  heatBtn.disabled = true;
+  supabaseClient.from('news_posts').update({ heat: (post.heat || 0) + 1 }).eq('id', post.id)
+    .then(({ error }) => { if (error) console.error('heat update failed', error); loadNewsPosts(); });
+});
+
+const newsComposeBody = document.getElementById('news-compose-body');
+const newsComposeCount = document.getElementById('news-compose-count');
+if (newsComposeBody) newsComposeBody.addEventListener('input', () => {
+  if (newsComposeCount) newsComposeCount.textContent = String(280 - newsComposeBody.value.length);
+});
+const newsComposeSubmit = document.getElementById('news-compose-submit');
+if (newsComposeSubmit) newsComposeSubmit.addEventListener('click', async () => {
+  const statusEl = document.getElementById('news-compose-status');
+  if (!requireActingTeam(statusEl)) return;
+  const body = (newsComposeBody.value || '').trim();
+  if (!body) { if (statusEl) { statusEl.textContent = 'Write something first.'; statusEl.className = 'form-status err'; } return; }
+  newsComposeSubmit.disabled = true;
+  const ok = await postNews(body, 'general', currentActingTeamId);
+  newsComposeSubmit.disabled = false;
+  if (!ok) { if (statusEl) { statusEl.textContent = "Couldn't post that — try again."; statusEl.className = 'form-status err'; } return; }
+  newsComposeBody.value = '';
+  if (newsComposeCount) newsComposeCount.textContent = '280';
+  if (statusEl) { statusEl.textContent = 'Posted.'; statusEl.className = 'form-status ok'; }
+});
 
 document.getElementById('recap-form').addEventListener('submit', async (e) => {
   e.preventDefault();
