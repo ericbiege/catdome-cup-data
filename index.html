@@ -756,10 +756,15 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .news-compose-count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); }
 .news-compose .btn { padding: 8px 20px; font-size: 12px; }
 .news-avatar {
+  position: relative; overflow: hidden;
   flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
   font-family: var(--font-display); font-weight: 800; font-size: 15px; color: #fff;
   background: linear-gradient(155deg, var(--gold), var(--crimson));
 }
+/* Real ESPN-synced team logo, layered over the monogram underneath. If the
+   image 404s its own onerror handler removes it, so the monogram (already
+   painted behind it) just shows through -- no broken-image icon, no flash. */
+.team-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .news-feed { display: flex; flex-direction: column; }
 .news-post { display: flex; gap: 12px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
 .news-post:first-child { padding-top: 4px; }
@@ -1689,6 +1694,39 @@ function catpointsMonogram(name) {
   const words = String(name).split(/\s+/).filter(Boolean);
   if (words.length === 1) return words[0].slice(0, 3).toUpperCase();
   return words.map(w => w[0]).join('').slice(0, 3).toUpperCase();
+}
+
+// team_id -> ESPN-synced logo URL (see loadTeamLogos()). Populated once at
+// boot and kept current by the espn-sync realtime subscription below --
+// starts empty, which just means every avatar renders as a monogram until
+// the first sync (or forever, for a team that's never uploaded a logo).
+const TEAM_LOGO_URL = {};
+
+async function loadTeamLogos() {
+  const { data, error } = await supabaseClient.from('team_espn_map').select('team_id, logo_url');
+  if (error) { console.error('loadTeamLogos failed', error); return; }
+  for (const row of data || []) {
+    if (row.logo_url) TEAM_LOGO_URL[row.team_id] = row.logo_url;
+    else delete TEAM_LOGO_URL[row.team_id];
+  }
+}
+
+// Renders a monogram badge exactly like before, but with the team's real
+// ESPN-synced logo layered on top when one's synced. If the image URL 404s
+// or otherwise fails to load, the <img> just removes itself and the
+// monogram underneath (already rendered) shows through -- no flash, no
+// broken-image icon, no separate fallback element to keep in sync.
+function teamAvatarInnerHtml(teamId, name) {
+  const mono = escapeHtml(catpointsMonogram(name));
+  const logo = teamId ? TEAM_LOGO_URL[teamId] : null;
+  const img = logo
+    ? `<img class="team-avatar-img" src="${escapeHtml(logo)}" alt="" loading="lazy" onerror="this.remove()">`
+    : '';
+  return `${mono}${img}`;
+}
+function teamAvatarHtml(teamId, name, extraClass) {
+  const cls = extraClass ? ` ${extraClass}` : '';
+  return `<div class="news-avatar${cls}">${teamAvatarInnerHtml(teamId, name)}</div>`;
 }
 function standingsDeltaHtml(delta) {
   const d = Math.round((Number(delta) || 0) * 10) / 10;
@@ -3428,10 +3466,10 @@ function setUserBadge() {
     badge.hidden = false;
     const authorInput = document.getElementById('recap-author');
     if (authorInput && !authorInput.value) authorInput.value = currentProfile.display_name || teamName(currentProfile.team_id);
-    if (composeAvatar) composeAvatar.textContent = catpointsMonogram(teamName(currentProfile.team_id));
+    if (composeAvatar) composeAvatar.innerHTML = teamAvatarInnerHtml(currentProfile.team_id, teamName(currentProfile.team_id));
   } else {
     badge.hidden = true;
-    if (composeAvatar) composeAvatar.textContent = '?';
+    if (composeAvatar) composeAvatar.innerHTML = '?';
   }
   renderCatpointsChip();
 }
@@ -3473,7 +3511,7 @@ function unlockApp() {
 }
 
 async function bootApp() {
-  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts()]);
+  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts(), loadTeamLogos()]);
   subscribeBets();
   subscribeRecaps();
   subscribeCatpoints();
@@ -4390,11 +4428,10 @@ function renderNewsFeed() {
   wrap.innerHTML = posts.map(p => {
     const name = p.teamId ? teamName(p.teamId) : (p.author || 'Catdome Cup');
     const handle = p.teamId ? `@${p.teamId.toLowerCase()}` : '@catdomecup';
-    const mono = catpointsMonogram(name);
     const heatClass = p.heat > 0 ? 'mine' : '';
     return `
     <div class="news-post" data-news-id="${p.id}">
-      <div class="news-avatar">${escapeHtml(mono)}</div>
+      ${teamAvatarHtml(p.teamId, name)}
       <div class="news-post-body-wrap">
         <div class="news-post-head">
           <span class="news-post-name">${escapeHtml(name)}</span>
