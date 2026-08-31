@@ -2218,7 +2218,11 @@ function addToSlip(item) {
   if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
   if (slip.some(i => slipItemKey(i) === slipItemKey(item))) { showToast("That's already on your slip."); return; }
   item.localId = makeBetId();
-  if (item.odds == null && !item.payoutMultiplier) item.odds = HOUSE_ODDS;
+  // H2H challenges are even money between two managers, not book-juiced -- don't
+  // default them to HOUSE_ODDS like every other (vs-the-book) slip item, or the
+  // slip preview shows a misleading "-110 / risk 5 to win 4.5" for a bet that will
+  // actually settle at stake-for-stake (winner takes both, see settleBetManually).
+  if (item.odds == null && !item.payoutMultiplier && !isH2HItem(item)) item.odds = HOUSE_ODDS;
   slip.push(item);
   renderSlip();
   showToast('Added to bet slip');
@@ -2228,9 +2232,13 @@ function removeFromSlip(localId) {
   renderSlip();
 }
 function slipOddsLabel(item) {
+  if (isH2HItem(item)) return 'Even';
   return item.payoutMultiplier ? `${item.payoutMultiplier}x` : formatOdds(item.odds);
 }
 function slipPayoutFor(item, stake) {
+  // Even money: total payout is both stakes combined, so "to win" (payout - stake)
+  // reads as the stake itself -- matches settleBetManually's stake*2 winner credit.
+  if (isH2HItem(item)) return (Number(stake) || 0) * 2;
   return item.payoutMultiplier ? stake * item.payoutMultiplier : americanOddsPayout(stake, item.odds);
 }
 function slipParlayDecimalOdds() {
