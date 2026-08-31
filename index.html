@@ -859,6 +859,25 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
   </div>
 </div>
 
+<div id="send-challenge-modal" class="auth-overlay" hidden>
+  <div class="auth-card">
+    <div class="auth-brand">Catdome&nbsp;Cup</div>
+    <h2>Challenge Ready &#129309;</h2>
+    <p class="auth-copy" id="send-challenge-summary"></p>
+    <div class="bet-preview" id="send-challenge-preview" style="text-align:left;margin-bottom:18px;"></div>
+    <button type="button" class="btn" id="send-challenge-btn" style="width:100%;">Text The Challenge</button>
+    <button type="button" class="btn ghost" id="send-challenge-later-btn" style="width:100%;margin-top:10px;">I&rsquo;ll Send It Later</button>
+  </div>
+</div>
+
+<div id="accept-challenge-modal" class="auth-overlay" hidden>
+  <div class="auth-card">
+    <div class="auth-brand">Catdome&nbsp;Cup</div>
+    <div id="accept-challenge-body"></div>
+    <button type="button" class="btn ghost" id="accept-challenge-dismiss-btn" style="width:100%;margin-top:14px;">Close</button>
+  </div>
+</div>
+
 <div id="page-root">
 <a class="visually-hidden" href="#main" style="position:absolute;left:-9999px;">Skip to content</a>
 
@@ -1235,13 +1254,99 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
       </div>
 
+      <div class="yardline" data-label="More Ways To Challenge"></div>
+      <div class="props-parlay-grid">
+        <div>
+          <div class="yardline" data-label="Full Slate Shootout"></div>
+          <div class="desc" style="margin-bottom:14px;">Skip your actual matchup &mdash; challenge any manager in the league to a side bet on total team score this week, opponent be damned.</div>
+          <div class="card bet-builder" id="shootout-builder">
+            <div class="row2">
+              <div>
+                <label for="shootout-team-a">Your Team</label>
+                <select id="shootout-team-a"></select>
+              </div>
+              <div>
+                <label for="shootout-team-b">Challenge</label>
+                <select id="shootout-team-b"></select>
+              </div>
+            </div>
+            <div class="bet-actions">
+              <button class="btn" type="button" id="shootout-place">Add to Slip</button>
+              <div class="form-status" id="shootout-status"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="yardline" data-label="Position Duel"></div>
+          <div class="desc" style="margin-bottom:14px;">RB1 vs. RB1, WR2 vs. WR2 &mdash; pick a roster slot and let two guys at the same position settle it.</div>
+          <div class="card bet-builder" id="duel-builder">
+            <div class="row2">
+              <div>
+                <label for="duel-position">Position</label>
+                <select id="duel-position">
+                  <option value="QB">QB</option>
+                  <option value="RB">RB</option>
+                  <option value="WR">WR</option>
+                  <option value="TE">TE</option>
+                  <option value="FLEX">FLEX</option>
+                  <option value="K">K</option>
+                  <option value="D/ST">D/ST</option>
+                </select>
+              </div>
+            </div>
+            <div class="row2">
+              <div>
+                <label for="duel-team-a">Your Team</label>
+                <select id="duel-team-a"></select>
+              </div>
+              <div>
+                <label for="duel-player-a">Your Player</label>
+                <div class="ac-wrap"><input type="text" id="duel-player-a" placeholder="e.g. your RB1" autocomplete="off"><div class="ac-menu" hidden></div></div>
+              </div>
+            </div>
+            <div class="row2">
+              <div>
+                <label for="duel-team-b">Challenge</label>
+                <select id="duel-team-b"></select>
+              </div>
+              <div>
+                <label for="duel-player-b">Their Player</label>
+                <div class="ac-wrap"><input type="text" id="duel-player-b" placeholder="e.g. their RB1" autocomplete="off"><div class="ac-menu" hidden></div></div>
+              </div>
+            </div>
+            <div class="bet-actions">
+              <button class="btn" type="button" id="duel-place">Add to Slip</button>
+              <div class="form-status" id="duel-status"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="yardline" data-label="Streak Survivor"></div>
+          <div class="desc" style="margin-bottom:14px;">Higher score wins the week. Lose, and you can run it back next week at double &mdash; double or nothing, until someone folds.</div>
+          <div class="card bet-builder" id="streak-builder">
+            <div class="row2">
+              <div>
+                <label for="streak-team-a">Your Team</label>
+                <select id="streak-team-a"></select>
+              </div>
+              <div>
+                <label for="streak-team-b">Challenge</label>
+                <select id="streak-team-b"></select>
+              </div>
+            </div>
+            <div class="bet-actions">
+              <button class="btn" type="button" id="streak-place">Add to Slip</button>
+              <div class="form-status" id="streak-status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="yardline" data-label="More H2H Ideas"></div>
       <div class="idea-grid">
-        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Bench Battle Duel</h4><div class="desc" style="font-size:13px;">Challenge a friend head-to-head on who strands fewer points on their bench this week &mdash; peer stakes on the existing Bench Points Bowl math.</div></div>
         <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Waiver Wire Duel</h4><div class="desc" style="font-size:13px;">Both of you name a free-agent pickup before waivers process. Whoever's guy scores more the rest of the season wins the stake.</div></div>
-        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Full Slate Shootout</h4><div class="desc" style="font-size:13px;">Skip your actual matchup &mdash; challenge any manager in the league to a side bet on total team score this week, opponent be damned.</div></div>
-        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Position Duel</h4><div class="desc" style="font-size:13px;">RB1 vs. RB1, WR2 vs. WR2 &mdash; pick a roster slot and let two guys at the same position settle it.</div></div>
-        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Streak Survivor</h4><div class="desc" style="font-size:13px;">A running side bet between two managers &mdash; loser of the week owes double next week, "double or nothing" style, until someone folds.</div></div>
       </div>
     </div>
 
@@ -1574,6 +1679,7 @@ function showView(view) {
   if (view === 'team') renderTeamDetail(activeTeamId);
   if (view === 'records') { renderRecords(); renderStandings(); }
   if (view === 'recaps') { renderRecaps(); renderNewsFeed(); }
+  maybeShowAcceptModal();
   if (!pendingHighlightId) window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 }
 
@@ -2132,13 +2238,70 @@ function updateBenchPreview() {
   if (el) el.textContent = buildBenchText();
 }
 
+function buildShootoutText() {
+  const teamA = teamName(document.getElementById('shootout-team-a').value);
+  const teamB = teamName(document.getElementById('shootout-team-b').value);
+  const week = currentLeagueWeek();
+  return `\u{1F3C8} CATDOME CUP FULL SLATE SHOOTOUT \u{1F3C8}\nWeek ${week}: ${teamA} vs ${teamB}\nForget our actual matchups — whoever's team scores MORE total fantasy points this week wins the bet, opponent be damned.\n— sent from Catdome Cup H2H Challenge`;
+}
+function updateShootoutPreview() {
+  const el = document.getElementById('shootout-preview');
+  if (el) el.textContent = buildShootoutText();
+}
+
+function buildDuelText() {
+  const teamA = teamName(document.getElementById('duel-team-a').value);
+  const teamB = teamName(document.getElementById('duel-team-b').value);
+  const position = document.getElementById('duel-position').value;
+  const playerA = document.getElementById('duel-player-a').value.trim() || `(your ${position})`;
+  const playerB = document.getElementById('duel-player-b').value.trim() || `(their ${position})`;
+  const week = currentLeagueWeek();
+  return `\u{2694}\u{FE0F} CATDOME CUP POSITION DUEL \u{2694}\u{FE0F}\nWeek ${week}: ${position} Duel — ${playerA} (${teamA}) vs ${playerB} (${teamB})\nWhoever's ${position} scores more fantasy points this week wins the bet.\n— sent from Catdome Cup H2H Challenge`;
+}
+function updateDuelPreview() {
+  const el = document.getElementById('duel-preview');
+  if (el) el.textContent = buildDuelText();
+}
+
+function buildStreakText() {
+  const teamA = teamName(document.getElementById('streak-team-a').value);
+  const teamB = teamName(document.getElementById('streak-team-b').value);
+  const week = currentLeagueWeek();
+  return `\u{1F525} CATDOME CUP STREAK SURVIVOR \u{1F525}\nWeek ${week}: ${teamA} vs ${teamB}\nHigher fantasy score this week wins the stake. Lose, and you can run it back next week at double — double or nothing, until someone folds.\n— sent from Catdome Cup H2H Challenge`;
+}
+function updateStreakPreview() {
+  const el = document.getElementById('streak-preview');
+  if (el) el.textContent = buildStreakText();
+}
+// "Until someone folds" -- either side of a settled Streak Survivor can propose
+// the next leg at double the stake straight from My Wagers, instead of having to
+// rebuild the challenge by hand in the builder above.
+function rematchStreak(betId) {
+  if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  if (!bet) return;
+  if (currentActingTeamId !== bet.teamA && currentActingTeamId !== bet.teamB) { showToast("You weren't part of that streak."); return; }
+  const opponent = currentActingTeamId === bet.teamA ? bet.teamB : bet.teamA;
+  const week = currentLeagueWeek();
+  const doubleStake = (Number(bet.stake) || 0) * 2 || null;
+  const item = {
+    type: 'streak',
+    summary: `${teamName(currentActingTeamId)} vs ${teamName(opponent)} &mdash; Streak Survivor (Double or Nothing), Week ${week}`,
+    text: `\u{1F525} CATDOME CUP STREAK SURVIVOR — DOUBLE OR NOTHING \u{1F525}\nWeek ${week}: ${teamName(currentActingTeamId)} vs ${teamName(opponent)}\nRunning it back${doubleStake ? ` at ${cp(doubleStake)} each` : ''} — higher score wins, or it doubles again next week.\n— sent from Catdome Cup H2H Challenge`,
+    teamA: currentActingTeamId, teamB: opponent, week,
+  };
+  if (doubleStake) item.lastStake = doubleStake;
+  addToSlip(item);
+  showToast('Rematch added to your slip — confirm the stake and place it.');
+}
+
 const BET_STATUS_LABELS = { open: 'Open', settled: 'Settled', pending: 'Awaiting Response', declined: 'Declined' };
 const BET_STATUS_BADGE = { open: 'champ', settled: 'reg', pending: 'pending', declined: 'sacko' };
 // H2H (peer-vs-peer) bet types placed through the H2H Challenge tab -- these need
 // an opponent to accept before anything's live, unlike every other bet type in the
 // slip which goes straight to the book. Detected by type, not by teamB alone, since
 // plain book bets (waiver/trade/weekly/nfl) also carry a team_a/team_b pair.
-const H2H_BET_TYPES = ['prop', 'parlay'];
+const H2H_BET_TYPES = ['prop', 'parlay', 'bench', 'shootout', 'duel', 'streak'];
 function isH2HItem(item) { return H2H_BET_TYPES.includes(item.type) && item.teamA && item.teamB; }
 
 // Only you can issue Catpoints out of nowhere or settle a bet the auto-grader can't
@@ -2494,7 +2657,14 @@ async function placeSlip() {
   if (placeBtn) placeBtn.disabled = false;
   await loadCatpoints();
   refreshBetViews();
-  showToast(placedH2HId ? 'Challenge sent to the slip — hit Send Challenge in My Bets to text it over.' : 'Bet placed — good luck!');
+  if (placedH2HId) {
+    // The stake isn't live until the opponent accepts, and they can't accept what
+    // they never saw -- so put the send action front and center right now instead
+    // of making the sender hunt for it later in My Bets.
+    showSendChallengeModal(placedH2HId);
+  } else {
+    showToast('Bet placed — good luck!');
+  }
 }
 
 function renderMyWagers() {
@@ -2505,7 +2675,10 @@ function renderMyWagers() {
     return;
   }
   const mine = (LEAGUE_DATA.bets || [])
-    .filter(b => b.placedBy === currentActingTeamId)
+    // Streak Survivor is included from the teamB side too -- both managers in a
+    // running streak need to see it here to run it back, not just whoever
+    // originally sent the challenge.
+    .filter(b => b.placedBy === currentActingTeamId || (b.type === 'streak' && b.teamB === currentActingTeamId))
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || String(b.id).localeCompare(String(a.id)));
   if (!mine.length) {
     wrap.innerHTML = '<div class="recap-empty">No wagers yet &mdash; build a slip above and place your first bet.</div>';
@@ -2531,6 +2704,9 @@ function renderMyWagers() {
     const sendHtml = (b.status === 'pending' && H2H_BET_TYPES.includes(b.type))
       ? `<div class="h2h-actions"><button class="btn ghost" type="button" data-send-challenge="${b.id}">Send Challenge</button></div>`
       : '';
+    const rematchHtml = (b.type === 'streak' && b.status === 'settled' && b.result !== 'push')
+      ? `<div class="h2h-actions"><button class="btn ghost" type="button" data-rematch-streak="${b.id}">&#128293; Run It Back (Double or Nothing)</button></div>`
+      : '';
     return `
     <div class="card bet-ledger-row" data-bet-id="${b.id}">
       <div class="bet-ledger-top">
@@ -2541,6 +2717,7 @@ function renderMyWagers() {
       ${stakeHtml}
       ${resultHtml}
       ${sendHtml}
+      ${rematchHtml}
     </div>`;
   }).join('');
 }
@@ -2609,9 +2786,99 @@ function sendChallenge(betId, btn) {
   const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
   if (!bet) return;
   const link = `${window.location.origin}${window.location.pathname}#/pickem/accept/${betId}`;
-  const text = `${bet.text || bet.summary}\n\nAccept it here: ${link}`;
+  const text = `${bet.text || bet.summary}\n\nTap to accept or decline: ${link}`;
   shareChallenge(text, btn);
 }
+
+// ---- "Challenge Ready" modal: the send action lives right where the challenge
+// was just built, instead of making the sender dig for it later in My Bets. ----
+function showSendChallengeModal(betId) {
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  const modal = document.getElementById('send-challenge-modal');
+  if (!bet || !modal) { showToast('Challenge sent to the slip — hit Send Challenge in My Bets to text it over.'); return; }
+  const summaryEl = document.getElementById('send-challenge-summary');
+  if (summaryEl) summaryEl.innerHTML = `Waiting on <b>${teamName(bet.teamB)}</b> to accept &mdash; nothing moves until they do. You each stake ${cp(bet.stake)}, winner takes ${cp((bet.stake || 0) * 2)}.`;
+  const previewEl = document.getElementById('send-challenge-preview');
+  if (previewEl) previewEl.textContent = bet.text || bet.summary;
+  const sendBtn = document.getElementById('send-challenge-btn');
+  if (sendBtn) sendBtn.onclick = () => sendChallenge(betId, sendBtn);
+  modal.hidden = false;
+}
+function hideSendChallengeModal() {
+  const modal = document.getElementById('send-challenge-modal');
+  if (modal) modal.hidden = true;
+}
+const sendChallengeLaterBtn = document.getElementById('send-challenge-later-btn');
+if (sendChallengeLaterBtn) sendChallengeLaterBtn.addEventListener('click', hideSendChallengeModal);
+
+// ---- One-tap Accept/Decline landing for a texted challenge link
+// (#/pickem/accept/:betId) -- the recipient shouldn't have to find their way to
+// My Bets on their own, so this surfaces the same Accept/Decline action as a
+// full-screen prompt the moment the link opens (once they're signed in). ----
+function renderAcceptChallengeBody(betId) {
+  const body = document.getElementById('accept-challenge-body');
+  if (!body) return;
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  if (!bet) {
+    body.innerHTML = `<h2>Challenge Not Found</h2><p class="auth-copy">This link looks broken, or the challenge was removed.</p>`;
+    return;
+  }
+  const senderName = teamName(bet.placedBy);
+  if (bet.status !== 'pending') {
+    const closedCopy = {
+      open: `You're in — this challenge is already live.`,
+      settled: `This challenge has already been settled.`,
+      declined: `This challenge was already declined.`,
+    }[bet.status] || `This challenge isn't waiting on a response anymore.`;
+    body.innerHTML = `
+      <h2>${bet.status === 'open' ? 'Already Accepted' : 'Challenge Closed'}</h2>
+      <p class="auth-copy">${closedCopy}</p>
+      <div class="bet-ledger-summary" style="margin-bottom:6px;">${bet.summary}</div>`;
+    return;
+  }
+  if (currentActingTeamId && currentActingTeamId !== bet.teamB) {
+    body.innerHTML = `
+      <h2>Wrong Team Signed In</h2>
+      <p class="auth-copy">${senderName} sent this challenge to <b>${teamName(bet.teamB)}</b>. You're signed in as ${teamName(currentActingTeamId)}.</p>
+      <div class="bet-ledger-summary" style="margin-bottom:6px;">${bet.summary}</div>`;
+    return;
+  }
+  body.innerHTML = `
+    <h2>You've Been Challenged &#129309;</h2>
+    <p class="auth-copy">${senderName} wants in on this one:</p>
+    <div class="bet-ledger-summary" style="margin-bottom:10px;">${bet.summary}</div>
+    <div class="h2h-stake-line" style="margin-bottom:18px;">You each stake ${cp(bet.stake)} &mdash; winner takes ${cp((bet.stake || 0) * 2)}.</div>
+    <div class="h2h-actions" style="justify-content:center;">
+      <button class="btn" type="button" data-accept-challenge-action="accept">Accept Challenge</button>
+      <button class="btn ghost decline" type="button" data-accept-challenge-action="decline">Decline</button>
+    </div>`;
+}
+function hideAcceptChallengeModal() {
+  const modal = document.getElementById('accept-challenge-modal');
+  if (modal) modal.hidden = true;
+  pendingHighlightId = null;
+  if (window.location.hash.startsWith('#/pickem/accept/')) {
+    history.replaceState(null, '', window.location.pathname + window.location.search + '#/pickem');
+  }
+}
+function maybeShowAcceptModal() {
+  const modal = document.getElementById('accept-challenge-modal');
+  if (!modal) return;
+  if (!pendingHighlightId) { modal.hidden = true; return; }
+  if (!currentUser) return; // auth gate is up -- re-checked once sign-in finishes and navigate() re-runs
+  setPickemTab('mybets');
+  renderAcceptChallengeBody(pendingHighlightId);
+  modal.hidden = false;
+}
+document.addEventListener('click', e => {
+  const actionBtn = e.target.closest('[data-accept-challenge-action]');
+  if (!actionBtn || !pendingHighlightId) return;
+  const betId = pendingHighlightId;
+  const task = actionBtn.dataset.acceptChallengeAction === 'accept' ? acceptChallenge(betId) : declineChallenge(betId);
+  task.then(() => renderAcceptChallengeBody(betId));
+});
+const acceptChallengeDismissBtn = document.getElementById('accept-challenge-dismiss-btn');
+if (acceptChallengeDismissBtn) acceptChallengeDismissBtn.addEventListener('click', hideAcceptChallengeModal);
 
 // Bet data now surfaces in two places -- the working list on the Sportsbook page
 // and each team's Betting Log -- so any mutation needs to refresh whichever of
@@ -2625,6 +2892,7 @@ function refreshBetViews() {
     renderTeamDetail(activeTeamId);
   }
   renderHomeTrendingBets();
+  maybeShowAcceptModal();
 }
 
 // ---- Supabase <-> app field mapping -----------------------------------
@@ -2730,7 +2998,7 @@ function renderAdminPanel() {
   const wrap = document.getElementById('book-settle-list');
   if (!wrap) return;
   const needsBook = (LEAGUE_DATA.bets || []).filter(b =>
-    b.status === 'open' && (b.needsReview || ['waiver', 'trade', 'parlay', 'futures', 'prop'].includes(b.type))
+    b.status === 'open' && (b.needsReview || ['waiver', 'trade', 'parlay', 'futures', 'prop', 'bench', 'shootout', 'duel', 'streak'].includes(b.type))
   );
   if (!needsBook.length) {
     wrap.innerHTML = '<div class="recap-empty">Nothing waiting on you right now.</div>';
@@ -2853,6 +3121,12 @@ function renderPickEm() {
   populateTeamSelect('trade-team-b', 1);
   populateTeamSelect('bench-team-a', 0);
   populateTeamSelect('bench-team-b', 1);
+  populateTeamSelect('shootout-team-a', 0);
+  populateTeamSelect('shootout-team-b', 1);
+  populateTeamSelect('duel-team-a', 0);
+  populateTeamSelect('duel-team-b', 1);
+  populateTeamSelect('streak-team-a', 0);
+  populateTeamSelect('streak-team-b', 1);
   if (isAdmin()) populateTeamSelect('book-issue-team', 0);
   updatePropPreview();
   updateParlayLegButtons();
@@ -2860,6 +3134,9 @@ function renderPickEm() {
   updateWaiverPreview();
   updateTradePreview();
   updateBenchPreview();
+  updateShootoutPreview();
+  updateDuelPreview();
+  updateStreakPreview();
 }
 
 function renderStandings() {
@@ -3683,12 +3960,17 @@ document.getElementById('team-gate-back-btn').addEventListener('click', () => {
 
 /* -------- pick 'em interactions -------- */
 const pickemTabBar = document.querySelector('.pickem-tabs');
+function setPickemTab(tab) {
+  if (!pickemTabBar) return;
+  const tabBtn = pickemTabBar.querySelector(`[data-pickem-tab="${tab}"]`);
+  if (!tabBtn) return;
+  pickemTabBar.querySelectorAll('[data-pickem-tab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
+  document.querySelectorAll('.pickem-panel').forEach(p => p.classList.toggle('active', p.dataset.pickemPanel === tab));
+}
 if (pickemTabBar) pickemTabBar.addEventListener('click', e => {
   const tabBtn = e.target.closest('[data-pickem-tab]');
   if (!tabBtn) return;
-  const tab = tabBtn.dataset.pickemTab;
-  pickemTabBar.querySelectorAll('[data-pickem-tab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
-  document.querySelectorAll('.pickem-panel').forEach(p => p.classList.toggle('active', p.dataset.pickemPanel === tab));
+  setPickemTab(tabBtn.dataset.pickemTab);
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 });
 
@@ -4154,6 +4436,8 @@ attachPlayerAutocomplete(document.getElementById('prop-player-a'), { withTeam: f
 attachPlayerAutocomplete(document.getElementById('prop-player-b'), { withTeam: false });
 attachPlayerAutocomplete(document.getElementById('waiver-player-a'), { withTeam: false });
 attachPlayerAutocomplete(document.getElementById('waiver-player-b'), { withTeam: false });
+attachPlayerAutocomplete(document.getElementById('duel-player-a'), { withTeam: false });
+attachPlayerAutocomplete(document.getElementById('duel-player-b'), { withTeam: false });
 document.querySelectorAll('#parlay-legs .parlay-player').forEach(i => attachPlayerAutocomplete(i, { withTeam: true }));
 
 document.addEventListener('click', e => {
@@ -4312,6 +4596,69 @@ if (benchPlaceBtn) benchPlaceBtn.addEventListener('click', () => {
   statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
 
+['shootout-team-a', 'shootout-team-b'].forEach(id => {
+  const elx = document.getElementById(id);
+  if (elx) elx.addEventListener('input', updateShootoutPreview);
+});
+const shootoutPlaceBtn = document.getElementById('shootout-place');
+if (shootoutPlaceBtn) shootoutPlaceBtn.addEventListener('click', () => {
+  const statusEl = document.getElementById('shootout-status');
+  const a = document.getElementById('shootout-team-a').value, b = document.getElementById('shootout-team-b').value;
+  if (a === b) { statusEl.textContent = 'Pick someone to challenge — can\'t challenge yourself.'; statusEl.className = 'form-status err'; return; }
+  if (!requireActingTeam(statusEl)) return;
+  const shootoutWeek = currentLeagueWeek();
+  addToSlip({
+    type: 'shootout',
+    summary: `${teamName(a)} vs ${teamName(b)} &mdash; Full Slate Shootout, Week ${shootoutWeek}`,
+    text: buildShootoutText(),
+    teamA: a, teamB: b, week: shootoutWeek,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
+});
+
+['duel-team-a', 'duel-team-b', 'duel-position', 'duel-player-a', 'duel-player-b'].forEach(id => {
+  const elx = document.getElementById(id);
+  if (elx) elx.addEventListener('input', updateDuelPreview);
+});
+const duelPlaceBtn = document.getElementById('duel-place');
+if (duelPlaceBtn) duelPlaceBtn.addEventListener('click', () => {
+  const statusEl = document.getElementById('duel-status');
+  const pa = document.getElementById('duel-player-a').value.trim(), pb = document.getElementById('duel-player-b').value.trim();
+  if (!pa || !pb) { statusEl.textContent = 'Add both players first.'; statusEl.className = 'form-status err'; return; }
+  if (!requireActingTeam(statusEl)) return;
+  const duelTeamA = document.getElementById('duel-team-a').value, duelTeamB = document.getElementById('duel-team-b').value;
+  if (duelTeamA === duelTeamB) { statusEl.textContent = 'Pick someone to challenge — can\'t challenge yourself.'; statusEl.className = 'form-status err'; return; }
+  const duelWeek = currentLeagueWeek();
+  const duelPosition = document.getElementById('duel-position').value;
+  addToSlip({
+    type: 'duel',
+    summary: `${pa} vs ${pb} &mdash; ${duelPosition} Duel, Week ${duelWeek}`,
+    text: buildDuelText(),
+    teamA: duelTeamA, teamB: duelTeamB, week: duelWeek, market: duelPosition, playerA: pa, playerB: pb,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
+});
+
+['streak-team-a', 'streak-team-b'].forEach(id => {
+  const elx = document.getElementById(id);
+  if (elx) elx.addEventListener('input', updateStreakPreview);
+});
+const streakPlaceBtn = document.getElementById('streak-place');
+if (streakPlaceBtn) streakPlaceBtn.addEventListener('click', () => {
+  const statusEl = document.getElementById('streak-status');
+  const a = document.getElementById('streak-team-a').value, b = document.getElementById('streak-team-b').value;
+  if (a === b) { statusEl.textContent = 'Pick someone to challenge — can\'t challenge yourself.'; statusEl.className = 'form-status err'; return; }
+  if (!requireActingTeam(statusEl)) return;
+  const streakWeek = currentLeagueWeek();
+  addToSlip({
+    type: 'streak',
+    summary: `${teamName(a)} vs ${teamName(b)} &mdash; Streak Survivor, Week ${streakWeek}`,
+    text: buildStreakText(),
+    teamA: a, teamB: b, week: streakWeek,
+  });
+  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
+});
+
 // ---- Bet slip tray: toggle, remove, stake input, place ----
 const slipTrayToggle = document.getElementById('slip-tray-toggle');
 if (slipTrayToggle) slipTrayToggle.addEventListener('click', () => {
@@ -4358,9 +4705,11 @@ document.addEventListener('click', e => {
   const acceptBtn = e.target.closest('[data-accept-challenge]');
   const declineBtn = e.target.closest('[data-decline-challenge]');
   const sendBtn = e.target.closest('[data-send-challenge]');
+  const rematchBtn = e.target.closest('[data-rematch-streak]');
   if (acceptBtn) { acceptBtn.disabled = true; acceptChallenge(acceptBtn.dataset.acceptChallenge); }
   else if (declineBtn) { declineBtn.disabled = true; declineChallenge(declineBtn.dataset.declineChallenge); }
   else if (sendBtn) { sendChallenge(sendBtn.dataset.sendChallenge, sendBtn); }
+  else if (rematchBtn) { rematchStreak(rematchBtn.dataset.rematchStreak); }
 });
 
 document.addEventListener('click', e => {
