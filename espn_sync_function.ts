@@ -9,17 +9,28 @@
 //      league.
 //   3. Writes standings, rosters, and weekly matchups into Supabase, skipping
 //      any ESPN team not present in team_espn_map (Team Saxon, on purpose).
-//   4. Logs one row to sync_log every run, success or failure, so you can see
+//   4. Calls ESPN's separate "recent activity" feed for waiver adds and
+//      trades and upserts them into espn_transactions (see
+//      fetchRecentTransactions below) -- used to auto-grade Trade Deadline
+//      Chaos bets, since there's no other way to know a real trade happened.
+//   5. Grades every open bet it can (see gradeBets below) using the data just
+//      synced, and pays out Catpoints automatically.
+//   6. Logs one row to sync_log every run, success or failure, so you can see
 //      in the SQL Editor whether the scheduled job is actually working:
 //        select * from sync_log order by ran_at desc limit 5;
 //
-// This talks to ESPN's endpoint, which isn't officially documented or
-// supported by ESPN -- it's the same endpoint the community's fantasy tools
-// use, but the exact shape of some fields (especially roster stats) was
-// built from documentation rather than a live test against your league,
-// since this environment can't reach ESPN's servers directly. The first few
-// real runs are the real test -- if sync_log shows errors or something
-// looks off on the site, send me what sync_log says and I'll adjust.
+// Before step 4 can write anything you need espn_transactions_schema.sql run
+// in the SQL Editor (creates the espn_transactions table).
+//
+// This talks to ESPN's endpoints, which aren't officially documented or
+// supported by ESPN -- the same ones the community's fantasy tools use, but
+// the exact shape of some fields (especially roster stats, and the
+// transactions feed in particular) was built from documentation and a
+// widely-used open-source API wrapper rather than a live test against your
+// league, since this environment can't reach ESPN's servers directly. The
+// first few real runs are the real test -- if sync_log shows errors, a bet
+// settles wrong, or something looks off on the site, send me what sync_log
+// (and espn_transactions, for a trade bet) says and I'll adjust.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -54,11 +65,24 @@ const SLOT_MAP: Record<number, string> = {
 // function always pays out to `placed_by`, never assumes team_a.
 //
 // Markets handled automatically: weekly (over/under/straight/margin), bench
-// (fewer bench points wins), and prop (higher actual fantasy points wins, by
-// matching the free-typed player name against that week's synced roster row).
-// Waiver, trade, parlay, and futures stay manual -- settle those from the
-// Sportsbook admin panel.
-async function gradeBets(supabase: any, year: number): Promise<{ graded: number; flagged: number }> {
+// (fewer bench points wins), prop (higher actual fantasy points wins, by
+// matching the free-typed player name against that week's synced roster row),
+// shootout and streak (higher of the two teams' own weekly fantasy score
+// wins -- same synced weekly_matchups row used for "weekly", just comparing
+// two teams that may not have actually played each other), duel and waiver
+// (same free-typed-name-vs-roster matching as prop), and trade (yes/no on
+// whether a trade between two specific teams happened by a deadline week,
+// using the espn_transactions table populated by fetchRecentTransactions()
+// below -- unverified against a real trade as of this writing; see the
+// comment on that function). Parlay and futures stay manual -- settle those
+// from the Sportsbook admin panel; they don't have a single-event trigger to
+// hook auto-grading onto.
+async function gradeBets(
+  supabase: any,
+  year: number,
+  currentWeek: number,
+  transactionRows: any[],
+): Promise<{ graded: number; flagged: number }> {
   const { data: openBets, error: betsErr } = await supabase
     .from("bets")
     .select("*")
@@ -112,7 +136,11 @@ async function gradeBets(supabase: any, year: number): Promise<{ graded: number;
       const aBench = benchSum(aRows), bBench = benchSum(bRows);
       // team_a (the bettor's team) wins by leaving FEWER points stranded on the bench.
       outcome = aBench < bBench ? "win" : aBench === bBench ? "push" : "loss";
-    } else if (bet.type === "prop") {
+    } else if (bet.type === "prop" || bet.type === "duel" || bet.type === "waiver") {
+      // Outscore Their Guy / Position Duel / Waiver Wire Wizard: two
+      // free-typed player names, higher actual fantasy points that week wins.
+      // Identical mechanics for all three -- they only differ in the UI copy
+      // around them.
       const weekIsFinal = matchupByKey.get(`${bet.team_a}-${bet.week}`)?.status === "STATUS_FINAL";
       const aRow = rosterByPlayerWeek.get(`${(bet.player_a || "").toLowerCase()}-${bet.week}`);
       const bRow = rosterByPlayerWeek.get(`${(bet.player_b || "").toLowerCase()}-${bet.week}`);
@@ -127,8 +155,48 @@ async function gradeBets(supabase: any, year: number): Promise<{ graded: number;
         outcome = Number(aRow.actual_points) > Number(bRow.actual_points) ? "win"
           : Number(aRow.actual_points) === Number(bRow.actual_points) ? "push" : "loss";
       }
+    } else if (bet.type === "shootout" || bet.type === "streak") {
+      // Full Slate Shootout / Streak Survivor: each team's OWN weekly fantasy
+      // score (their real ESPN matchup score that week, regardless of who
+      // they actually played) -- higher score wins. Streak Survivor's
+      // "run it back, double or nothing" continuation is just a new bet row
+      // for the next week, so this same branch handles every leg.
+      const aM = matchupByKey.get(`${bet.team_a}-${bet.week}`);
+      const bM = matchupByKey.get(`${bet.team_b}-${bet.week}`);
+      if (
+        !aM || !bM || aM.status !== "STATUS_FINAL" || bM.status !== "STATUS_FINAL" ||
+        aM.team_score == null || bM.team_score == null
+      ) continue;
+      const aScore = Number(aM.team_score), bScore = Number(bM.team_score);
+      outcome = aScore > bScore ? "win" : aScore === bScore ? "push" : "loss";
+    } else if (bet.type === "trade") {
+      // Trade Deadline Chaos: yes/no on whether a trade between team_a and
+      // team_b happens by the deadline week (bet.week). Needs a real ESPN
+      // trade to show up in transactionRows (see fetchRecentTransactions
+      // below) -- that parsing hasn't been checked against a live trade yet,
+      // so treat the first real trade of the season as the real test and
+      // check espn_transactions if a settled trade bet looks wrong.
+      const deadlineHasPassed = currentWeek > Number(bet.week);
+      const tradeHappened = (transactionRows ?? []).some((t: any) =>
+        t.action === "TRADED" &&
+        ((t.from_team_id === bet.team_a && t.to_team_id === bet.team_b) ||
+          (t.from_team_id === bet.team_b && t.to_team_id === bet.team_a))
+      );
+      if (bet.market !== "yes" && bet.market !== "no") {
+        // Placed before the yes/no call was captured as structured data (an
+        // older bet) -- there's nothing to grade against, so this always
+        // needs a human once the deadline's passed.
+        if (deadlineHasPassed && !bet.needs_review) flagForReview = true;
+        else continue;
+      } else if (tradeHappened) {
+        outcome = bet.market === "yes" ? "win" : "loss";
+      } else if (deadlineHasPassed) {
+        outcome = bet.market === "no" ? "win" : "loss";
+      } else {
+        continue; // still waiting -- deadline hasn't passed and no trade seen yet
+      }
     } else {
-      continue; // waiver / trade / parlay / futures -- settled manually via the admin panel
+      continue; // parlay / futures -- settled manually via the admin panel
     }
 
     if (flagForReview) {
@@ -168,6 +236,112 @@ async function gradeBets(supabase: any, year: number): Promise<{ graded: number;
   }
 
   return { graded, flagged };
+}
+
+// ---- ESPN transaction feed (waiver adds / trades) --------------------------
+// This is a second, separate call to ESPN's (also unofficial) league
+// "communication" feed -- the same one every third-party ESPN fantasy tool
+// uses for "recent activity" -- filtered to just the transaction message
+// types. It's used today only to grade "trade" bets (there's no other way to
+// know a real trade happened between two specific teams), and isn't yet
+// checked against a live response: the message shapes below (msg.from /
+// msg.to / msg.for / msg.targetId per messageTypeId) come from a
+// widely-used, actively-maintained open-source ESPN API wrapper
+// (cwendt94/espn-api on GitHub), not a live test against this league, since
+// this environment can't reach ESPN directly. The first real waiver
+// Wednesday or approved trade of the season is the real test -- check
+// `select * from espn_transactions order by occurred_at desc limit 20;`
+// afterward and adjust the parsing here if a row looks wrong or missing.
+//
+// messageTypeId meanings (community-documented, stable across seasons):
+//   178 = free agent add (no waiver bid)      179/181/239 = dropped
+//   180 = waiver-claim add (msg.from is the winning bid amount, not a team)
+//   244 = traded (msg.from = sending team, msg.to = receiving team; a
+//         multi-player trade sends one message per player moved)
+const TRANSACTION_MESSAGE_TYPE_IDS = [178, 179, 180, 181, 239, 244];
+
+type TransactionRow = {
+  id: string;
+  messageTypeId: number;
+  action: "FA_ADDED" | "WAIVER_ADDED" | "DROPPED" | "TRADED";
+  fromEspnTeamId: number | null;
+  toEspnTeamId: number | null;
+  targetPlayerId: number | null;
+  occurredAt: string;
+};
+
+async function fetchRecentTransactions(
+  espnS2: string,
+  espnSwid: string,
+  year: number,
+): Promise<any[]> {
+  const filters = {
+    topics: {
+      filterType: { value: ["ACTIVITY_TRANSACTIONS"] },
+      limit: 200,
+      limitPerMessageSet: { value: 50 },
+      offset: 0,
+      sortMessageDate: { sortPriority: 1, sortAsc: false },
+      sortFor: { sortPriority: 2, sortAsc: false },
+      filterIncludeMessageTypeIds: { value: TRANSACTION_MESSAGE_TYPE_IDS },
+    },
+  };
+  const url =
+    `https://lm-api-reads.fantasy.espn.com/apis/v3/games/ffl/seasons/${year}/segments/0/leagues/${LEAGUE_ID}` +
+    `/communication/?view=kona_league_communication`;
+  const resp = await fetch(url, {
+    headers: {
+      Cookie: `espn_s2=${espnS2}; SWID=${espnSwid}`,
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "x-fantasy-filter": JSON.stringify(filters),
+    },
+  });
+  const rawBody = await resp.text();
+  if (!resp.ok) throw new Error(`ESPN transactions request failed: ${resp.status} ${rawBody.slice(0, 300)}`);
+  let data: any;
+  try {
+    data = JSON.parse(rawBody);
+  } catch {
+    throw new Error(`ESPN transactions returned non-JSON (status ${resp.status}): ${rawBody.slice(0, 300)}`);
+  }
+  return data?.topics ?? [];
+}
+
+function parseTransactionTopics(topics: any[]): TransactionRow[] {
+  const rows: TransactionRow[] = [];
+  for (const topic of topics ?? []) {
+    const dateMs = topic.date;
+    const occurredAt = new Date(dateMs).toISOString();
+    for (const msg of topic.messages ?? []) {
+      const msgId = msg.messageTypeId;
+      if (!TRANSACTION_MESSAGE_TYPE_IDS.includes(msgId)) continue;
+      if (msgId === 244) {
+        rows.push({
+          id: `${dateMs}-244-${msg.targetId}-${msg.from}-${msg.to}`,
+          messageTypeId: 244,
+          action: "TRADED",
+          fromEspnTeamId: msg.from ?? null,
+          toEspnTeamId: msg.to ?? null,
+          targetPlayerId: msg.targetId ?? null,
+          occurredAt,
+        });
+      } else {
+        const toEspnTeamId = msgId === 239 ? (msg.for ?? null) : (msg.to ?? null);
+        const action = msgId === 180 ? "WAIVER_ADDED" : msgId === 178 ? "FA_ADDED" : "DROPPED";
+        rows.push({
+          id: `${dateMs}-${msgId}-${msg.targetId}-${toEspnTeamId}`,
+          messageTypeId: msgId,
+          action,
+          fromEspnTeamId: null,
+          toEspnTeamId,
+          targetPlayerId: msg.targetId ?? null,
+          occurredAt,
+        });
+      }
+    }
+  }
+  return rows;
 }
 
 function currentSeasonYear(): number {
@@ -433,10 +607,54 @@ Deno.serve(async (_req) => {
       if (away) await writeSide(away, home);
     }
 
+    // ---- transactions (waiver adds / trades) -- see fetchRecentTransactions ----
+    // Non-fatal on its own: a hiccup here shouldn't take down standings/roster/
+    // matchup syncing or the bet grading that depends on them, so it's caught
+    // separately and just noted in `skipped`.
+    let transactionsSynced = 0;
+    let transactionRows: TransactionRow[] = [];
+    try {
+      const topics = await fetchRecentTransactions(espnS2, espnSwid, year);
+      transactionRows = parseTransactionTopics(topics);
+      if (transactionRows.length) {
+        const txnUpsertRows = transactionRows.map((r) => ({
+          id: r.id,
+          year,
+          message_type_id: r.messageTypeId,
+          action: r.action,
+          from_team_id: r.fromEspnTeamId != null ? espnToInternal.get(r.fromEspnTeamId) ?? null : null,
+          to_team_id: r.toEspnTeamId != null ? espnToInternal.get(r.toEspnTeamId) ?? null : null,
+          target_player_id: r.targetPlayerId,
+          occurred_at: r.occurredAt,
+        }));
+        const { error: txnErr } = await supabase.from("espn_transactions").upsert(txnUpsertRows, { onConflict: "id" });
+        if (txnErr) skipped.push(`transactions upsert: ${txnErr.message}`);
+        else transactionsSynced = txnUpsertRows.length;
+      }
+    } catch (e) {
+      skipped.push(`transactions fetch error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+
+    // Trade grading needs the FULL season's trade history, not just this
+    // run's freshly-fetched page (a trade from 3 weeks ago should still
+    // count) -- so read back everything stored so far rather than relying
+    // solely on transactionRows above.
+    let allTransactionRows: any[] = transactionRows;
+    try {
+      const { data: storedTxns } = await supabase
+        .from("espn_transactions")
+        .select("action, from_team_id, to_team_id")
+        .eq("year", year)
+        .eq("action", "TRADED");
+      if (storedTxns) allTransactionRows = storedTxns;
+    } catch {
+      // Fall back to just this run's rows if the read-back fails.
+    }
+
     let betsGraded = 0;
     let betsFlagged = 0;
     try {
-      const gradeResult = await gradeBets(supabase, year);
+      const gradeResult = await gradeBets(supabase, year, currentWeek, allTransactionRows);
       betsGraded = gradeResult.graded;
       betsFlagged = gradeResult.flagged;
     } catch (e) {
@@ -445,7 +663,7 @@ Deno.serve(async (_req) => {
 
     const detail =
       `year=${year} week=${currentWeek} standings=${standingsWritten} rosters=${rostersWritten} matchups=${matchupsWritten} logos=${logosWritten}` +
-      ` bets_graded=${betsGraded} bets_flagged=${betsFlagged}` +
+      ` transactions_synced=${transactionsSynced} bets_graded=${betsGraded} bets_flagged=${betsFlagged}` +
       (skipped.length ? ` | ${skipped.length} skipped: ${skipped.slice(0, 5).join("; ")}` : "");
     await log(true, detail);
 
