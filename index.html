@@ -919,6 +919,31 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 }
 .bet-win-banner .trophy { font-size: 18px; }
 
+/* ---------- Live bet tracker (My Bets) ---------- */
+.live-tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.track-card {
+  background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 14px;
+}
+.track-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.live-pill {
+  display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px;
+  font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--crimson);
+  background: color-mix(in srgb, var(--crimson) 14%, transparent); border: 1px solid color-mix(in srgb, var(--crimson) 35%, transparent);
+  border-radius: 999px; padding: 3px 9px 3px 7px; white-space: nowrap;
+}
+.live-pill.final { color: var(--ink-dim); background: var(--paper-sunken); border-color: var(--line); }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--crimson); flex-shrink: 0; animation: live-pulse 1.4s ease-in-out infinite; }
+.live-pill.final .live-dot { animation: none; background: var(--ink-dim); }
+@keyframes live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+.track-stake { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); white-space: nowrap; }
+.track-title { font-size: 13.5px; font-weight: 600; margin-bottom: 9px; line-height: 1.3; }
+.track-bar-wrap { height: 8px; border-radius: 999px; background: var(--paper-sunken); overflow: hidden; }
+.track-bar { height: 100%; border-radius: 999px; background: var(--ink-dim); transition: width 0.4s ease; }
+.track-bar.winning { background: var(--green-accent); }
+.track-bar.losing { background: var(--crimson); }
+.track-nums { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; color: var(--ink-dim); margin-top: 6px; font-family: var(--font-mono); }
+
 /* ---------- News: @mentions ---------- */
 .mention {
   color: var(--gold-strong); font-weight: 700; cursor: pointer; text-decoration: none;
@@ -1581,6 +1606,11 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-panel" data-pickem-panel="mybets">
+      <div id="live-tracker-section" hidden>
+        <div class="yardline" data-label="Live Right Now"></div>
+        <div id="live-tracker-grid" class="live-tracker-grid"></div>
+      </div>
+
       <div class="yardline" data-label="Your Book"></div>
       <div id="mybets-record-strip"></div>
 
@@ -3315,6 +3345,297 @@ function renderBettorRecordStrip() {
     </div>`;
 }
 
+// ---- Live bet tracker (My Bets: "Live Right Now") ----------------------
+// Polls ESPN's free public site API directly from the browser -- the exact
+// same scoreboard/summary endpoints and stat-extraction rules nfl-lines-
+// grade and nfl-props-grade already use for FINAL settlement, just read
+// here mid-game so an open real-NFL bet shows real progress instead of
+// sitting silent as "Awaiting final score" until the next grading run.
+// Entirely read-only: this never writes to Supabase or nfl_games, and never
+// settles anything itself -- if ESPN and the eventual real grade ever
+// disagree on something, the real grade (from the Edge Functions) always
+// wins. Scoped to NFL Game Lines and NFL Player Props only -- League Action
+// fantasy bets settle off the separate ESPN Fantasy sync, not this public
+// scoreboard, so there's no live feed to poll for those here.
+const ESPN_SCOREBOARD_CACHE = new Map(); // dateStr -> events[] or null
+const ESPN_SUMMARY_CACHE = new Map();    // espn event id -> boxscore or null
+
+function espnDateStr(d) {
+  return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+async function fetchEspnScoreboard(dateStr) {
+  if (ESPN_SCOREBOARD_CACHE.has(dateStr)) return ESPN_SCOREBOARD_CACHE.get(dateStr);
+  let events = null;
+  try {
+    const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`);
+    if (resp.ok) { const json = await resp.json(); events = json.events || []; }
+  } catch { /* offline, blocked, or ESPN's down -- the tracker just won't show this game */ }
+  ESPN_SCOREBOARD_CACHE.set(dateStr, events);
+  return events;
+}
+function espnNickname(fullName) {
+  const words = String(fullName || '').trim().split(/\s+/);
+  return (words[words.length - 1] || '').toLowerCase();
+}
+function findEspnEvent(events, homeTeam, awayTeam) {
+  if (!events) return null;
+  const homeNick = espnNickname(homeTeam), awayNick = espnNickname(awayTeam);
+  return events.find(ev => {
+    const names = (ev.competitions?.[0]?.competitors ?? []).map(c => (c.team?.displayName || c.team?.name || '').toLowerCase());
+    return names.some(n => n.includes(homeNick)) && names.some(n => n.includes(awayNick));
+  }) || null;
+}
+async function fetchEspnSummary(espnEventId) {
+  if (ESPN_SUMMARY_CACHE.has(espnEventId)) return ESPN_SUMMARY_CACHE.get(espnEventId);
+  let boxscore = null;
+  try {
+    const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${espnEventId}`);
+    if (resp.ok) { const json = await resp.json(); boxscore = json.boxscore || null; }
+  } catch { /* fail silently, same as above */ }
+  ESPN_SUMMARY_CACHE.set(espnEventId, boxscore);
+  return boxscore;
+}
+// Mirrors statValue()/parseBoxscore() in nfl_props_grade_function.ts line for
+// line -- kept in lockstep on purpose so a live preview here and the eventual
+// real grade never disagree on what a stat line means.
+function espnStatValue(category, athleteIndex, candidates) {
+  if (!category) return null;
+  const athlete = (category.athletes ?? [])[athleteIndex];
+  if (!athlete || !Array.isArray(athlete.stats)) return null;
+  const keys = (category.keys ?? category.labels ?? []).map(k => String(k).toLowerCase());
+  for (const cand of candidates) {
+    const idx = keys.findIndex(k => k.includes(cand));
+    if (idx >= 0 && athlete.stats[idx] != null) {
+      const n = parseFloat(String(athlete.stats[idx]).replace(/,/g, ''));
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+function espnParsePlayerLine(boxscore, playerName) {
+  const key = String(playerName || '').toLowerCase();
+  let line = null;
+  for (const teamBlock of boxscore?.players ?? []) {
+    for (const category of teamBlock.statistics ?? []) {
+      const name = String(category.name || '').toLowerCase();
+      (category.athletes ?? []).forEach((a, idx) => {
+        const displayName = a.athlete?.displayName || a.athlete?.shortName || '';
+        if (displayName.toLowerCase() !== key) return;
+        line = line || {};
+        if (name === 'passing') {
+          const yds = espnStatValue(category, idx, ['passingyards', 'yards']); if (yds != null) line.passYds = yds;
+          const ints = espnStatValue(category, idx, ['interceptions']); if (ints != null) line.passInt = ints;
+        } else if (name === 'rushing') {
+          const yds = espnStatValue(category, idx, ['rushingyards', 'yards']); if (yds != null) line.rushYds = yds;
+          const tds = espnStatValue(category, idx, ['rushingtouchdowns', 'touchdowns', 'td']); if (tds != null) line.anytimeTd = (line.anytimeTd || 0) + tds;
+          const long = espnStatValue(category, idx, ['longrushing', 'long']); if (long != null) line.rushLong = long;
+        } else if (name === 'receiving') {
+          const yds = espnStatValue(category, idx, ['receivingyards', 'yards']); if (yds != null) line.recYds = yds;
+          const tds = espnStatValue(category, idx, ['receivingtouchdowns', 'touchdowns', 'td']); if (tds != null) line.anytimeTd = (line.anytimeTd || 0) + tds;
+          const rec = espnStatValue(category, idx, ['receptions']); if (rec != null) line.receptions = rec;
+          const long = espnStatValue(category, idx, ['longreception', 'long']); if (long != null) line.recLong = long;
+        } else if (name === 'defensive') {
+          const sacks = espnStatValue(category, idx, ['sacks']); if (sacks != null) line.sacks = sacks;
+        }
+      });
+    }
+  }
+  return line;
+}
+
+// Which real NFL game (an NFL_GAMES row) a given open bet is riding on --
+// 'nfl' bets store team_a/team_b directly (captured off the game row at
+// placement time), 'nfl_prop' bets only store player+market+week, so those
+// resolve through NFL_PROPS first, exactly like nfl-props-grade does server-side.
+function liveTrackerGameForBet(bet) {
+  if (bet.type === 'nfl') {
+    return NFL_GAMES.find(g => (g.home_team === bet.teamA && g.away_team === bet.teamB) || (g.home_team === bet.teamB && g.away_team === bet.teamA)) || null;
+  }
+  if (bet.type === 'nfl_prop') {
+    const baseMarket = String(bet.market || '').replace(/_(over|under)$/, '');
+    const prop = NFL_PROPS.find(p => p.week === bet.week && p.market === baseMarket && String(p.player_name || '').toLowerCase() === String(bet.playerA || '').toLowerCase());
+    if (!prop) return null;
+    return NFL_GAMES.find(g => g.id === prop.event_id) || null;
+  }
+  return null;
+}
+function liveTrackerBarClamp(x) { return Math.max(0, Math.min(1, x)); }
+function liveTrackerStakeLabel(bet) {
+  return bet.stake != null ? `${cp(bet.stake)} to win ${cp((bet.potentialPayout ?? bet.stake) - bet.stake)}` : '';
+}
+function liveTrackerCardHtml({ bet, isFinal, clockLabel, fillPct, winning, leftNote, rightNote }) {
+  const barClass = winning === true ? 'winning' : winning === false ? 'losing' : '';
+  const pillClass = isFinal ? 'live-pill final' : 'live-pill';
+  const pillText = isFinal ? 'FINAL' : (clockLabel || 'LIVE');
+  return `
+    <div class="track-card" data-bet-id="${bet.id}">
+      <div class="track-top">
+        <div class="${pillClass}"><span class="live-dot"></span>${escapeHtml(pillText)}</div>
+        <div class="track-stake">${liveTrackerStakeLabel(bet)}</div>
+      </div>
+      <div class="track-title">${stripEntities(bet.summary || '')}</div>
+      <div class="track-bar-wrap"><div class="track-bar ${barClass}" style="width:${Math.round(liveTrackerBarClamp(fillPct) * 100)}%"></div></div>
+      <div class="track-nums"><span>${leftNote}</span><span>${rightNote}</span></div>
+    </div>`;
+}
+
+// Game Lines (spread/total/moneyline) -- mirrors the outcome math in
+// nfl_lines_grade_function.ts, just against the live/current score.
+function liveTrackerNflCard(bet, homeTeam, homeScore, awayScore, isFinal, clockLabel) {
+  if (homeScore == null || awayScore == null) return null;
+  const isHome = bet.teamA === homeTeam;
+  const backScore = isHome ? homeScore : awayScore;
+  const oppScore = isHome ? awayScore : homeScore;
+  const market = String(bet.market || '');
+  let fillPct, winning, leftNote, rightNote;
+  if (market === 'spread') {
+    const threshold = Number(bet.threshold) || 0;
+    const adjusted = backScore + threshold - oppScore;
+    fillPct = (adjusted + 14) / 28;
+    winning = adjusted === 0 ? null : adjusted > 0;
+    leftNote = `${backScore}-${oppScore}`;
+    rightNote = winning === null ? 'On the number'
+      : isFinal ? (winning ? `Won by ${fmt1(Math.abs(adjusted))}` : `missed the cover by ${fmt1(Math.abs(adjusted))}`)
+      : (winning ? `covering by ${fmt1(adjusted)}` : `needs ${fmt1(Math.abs(adjusted))} more`);
+  } else if (market === 'moneyline') {
+    const diff = backScore - oppScore;
+    fillPct = (diff + 14) / 28;
+    winning = diff === 0 ? null : diff > 0;
+    leftNote = `${backScore}-${oppScore}`;
+    rightNote = winning === null ? 'Tied'
+      : isFinal ? (winning ? 'Won outright' : 'Lost outright')
+      : (winning ? `leading by ${Math.abs(diff)}` : `trailing by ${Math.abs(diff)}`);
+  } else if (market === 'total_over' || market === 'total_under') {
+    const threshold = Number(bet.threshold);
+    if (!Number.isFinite(threshold)) return null;
+    const combined = homeScore + awayScore;
+    const isOver = market === 'total_over';
+    fillPct = combined / threshold;
+    winning = combined === threshold ? null : (isOver ? combined > threshold : combined < threshold);
+    leftNote = `${combined} combined`;
+    rightNote = winning === null ? 'On the number'
+      : isFinal ? (winning ? (isOver ? `went over by ${fmt1(combined - threshold)}` : `stayed under by ${fmt1(threshold - combined)}`)
+                          : (isOver ? `missed by ${fmt1(threshold - combined)}` : `went over by ${fmt1(combined - threshold)}`))
+      : `${threshold} line`;
+  } else {
+    return null;
+  }
+  return liveTrackerCardHtml({ bet, isFinal, clockLabel, fillPct, winning, leftNote, rightNote });
+}
+
+// Player Props -- mirrors the market branches in nfl_props_grade_function.ts.
+// "First/Last TD Scorer" can't be read live any more than the grader can
+// settle it automatically (ESPN's free boxscore has no scoring order), so
+// those two markets don't get a card at all rather than show a fake bar.
+function liveTrackerPropCard(bet, boxscore, isFinal, clockLabel) {
+  const market = String(bet.market || '');
+  if (market === 'first_td' || market === 'last_td') return null;
+  const playerLine = espnParsePlayerLine(boxscore, bet.playerA);
+  if (!playerLine) return null;
+  let fillPct, winning, leftNote, rightNote;
+  if (market === 'anytime_td') {
+    const hit = (playerLine.anytimeTd ?? 0) > 0;
+    fillPct = hit ? 1 : 0;
+    winning = isFinal ? hit : (hit ? true : null);
+    leftNote = hit ? 'Found the end zone' : 'No TD yet';
+    rightNote = isFinal ? (hit ? 'Won' : 'Lost') : (hit ? 'Locked in' : 'Still live');
+  } else {
+    const threshold = Number(bet.threshold);
+    if (!Number.isFinite(threshold)) return null;
+    const baseMarket = market.replace(/_(over|under)$/, '');
+    const actual = {
+      multi_td: playerLine.anytimeTd, pass_yds: playerLine.passYds, pass_int: playerLine.passInt,
+      rush_yds: playerLine.rushYds, rush_long: playerLine.rushLong, reception_yds: playerLine.recYds,
+      receptions: playerLine.receptions, reception_long: playerLine.recLong, sacks: playerLine.sacks,
+    }[baseMarket];
+    if (actual == null) return null;
+    const isOver = market.endsWith('_over');
+    fillPct = actual / threshold;
+    winning = actual === threshold ? null : (isOver ? actual > threshold : actual < threshold);
+    const unit = PROP_UNIT_LABELS[baseMarket] || '';
+    leftNote = `${fmt1(actual)}${unit ? ' ' + unit : ''} so far`;
+    rightNote = winning === null ? 'Pushing'
+      : isFinal ? (winning ? `won by ${fmt1(Math.abs(actual - threshold))}${unit ? ' ' + unit : ''}` : `missed by ${fmt1(Math.abs(actual - threshold))}${unit ? ' ' + unit : ''}`)
+      : `${threshold}${unit ? ' ' + unit : ''} line`;
+  }
+  return liveTrackerCardHtml({ bet, isFinal, clockLabel, fillPct, winning, leftNote, rightNote });
+}
+
+// Same "missed by X" unit labels as nfl_props_grade_function.ts, reused here
+// so a live card's phrasing matches whatever the real settlement eventually says.
+const PROP_UNIT_LABELS = {
+  multi_td: 'TDs', pass_yds: 'pass yds', pass_int: 'INTs', rush_yds: 'rush yds',
+  rush_long: 'yds', reception_yds: 'rec yds', receptions: 'receptions',
+  reception_long: 'yds', sacks: 'sacks',
+};
+
+let liveTrackerRunToken = 0;
+async function renderLiveTracker() {
+  const section = document.getElementById('live-tracker-section');
+  const wrap = document.getElementById('live-tracker-grid');
+  if (!section || !wrap) return;
+  if (!currentActingTeamId) { section.hidden = true; return; }
+  const candidates = (LEAGUE_DATA.bets || []).filter(b =>
+    b.placedBy === currentActingTeamId && b.status === 'open' && (b.type === 'nfl' || b.type === 'nfl_prop'));
+  if (!candidates.length) { section.hidden = true; return; }
+
+  const pairs = candidates
+    .map(bet => ({ bet, game: liveTrackerGameForBet(bet) }))
+    .filter(p => p.game && p.game.kickoff && new Date(p.game.kickoff) <= new Date());
+  if (!pairs.length) { section.hidden = true; return; }
+
+  // Guards against a slower-arriving earlier run clobbering a newer one if
+  // renderLiveTracker() gets called again (bet placed, tab re-entered, the
+  // 45s poll) before the first call's fetches have all resolved.
+  const runToken = ++liveTrackerRunToken;
+
+  const byDate = new Map();
+  pairs.forEach(p => {
+    const d = espnDateStr(new Date(p.game.kickoff));
+    if (!byDate.has(d)) byDate.set(d, []);
+    byDate.get(d).push(p);
+  });
+
+  const cardsHtml = [];
+  for (const [dateStr, group] of byDate) {
+    const events = await fetchEspnScoreboard(dateStr);
+    if (!events) continue;
+    for (const { bet, game } of group) {
+      const ev = findEspnEvent(events, game.home_team, game.away_team);
+      if (!ev) continue;
+      const statusName = ev.status?.type?.name || 'STATUS_SCHEDULED';
+      if (statusName === 'STATUS_SCHEDULED') continue; // ESPN itself hasn't kicked this off yet
+      const comps = ev.competitions?.[0]?.competitors ?? [];
+      const homeC = comps.find(c => c.homeAway === 'home');
+      const awayC = comps.find(c => c.homeAway === 'away');
+      const homeScore = homeC?.score != null ? Number(homeC.score) : null;
+      const awayScore = awayC?.score != null ? Number(awayC.score) : null;
+      const isFinal = statusName === 'STATUS_FINAL';
+      const clockLabel = ev.status?.type?.shortDetail || (isFinal ? 'Final' : 'Live');
+      let html = null;
+      if (bet.type === 'nfl') {
+        html = liveTrackerNflCard(bet, game.home_team, homeScore, awayScore, isFinal, clockLabel);
+      } else if (bet.type === 'nfl_prop') {
+        const boxscore = await fetchEspnSummary(ev.id);
+        if (boxscore) html = liveTrackerPropCard(bet, boxscore, isFinal, clockLabel);
+      }
+      if (html) cardsHtml.push(html);
+    }
+  }
+
+  if (runToken !== liveTrackerRunToken) return; // a newer run finished first -- drop this one
+  if (!cardsHtml.length) { section.hidden = true; return; }
+  section.hidden = false;
+  wrap.innerHTML = cardsHtml.join('');
+}
+// Keeps live cards moving while someone's actually looking at My Bets,
+// without polling ESPN in the background from every other tab/page.
+setInterval(() => {
+  const pickemActive = document.getElementById('view-pickem')?.classList.contains('active');
+  const mybetsActive = document.querySelector('.pickem-tab-btn[data-pickem-tab="mybets"][aria-current="true"]');
+  if (pickemActive && mybetsActive) renderLiveTracker();
+}, 45000);
+
 // ---- League Action: Tail Bets -- every H2H Challenge that's live or still
 // awaiting a response, league-wide (not just yours), so you can see what
 // challenges are out there and copy one (see tailBet below) instead of
@@ -3549,6 +3870,7 @@ function refreshBetViews() {
   renderMyWagers();
   renderIncomingChallenges();
   renderBettorRecordStrip();
+  renderLiveTracker();
   renderTailBets();
   renderH2HLeaderboard();
   updateMyBetsAlertDot();
@@ -3786,6 +4108,7 @@ function renderPickEm() {
   renderMyWagers();
   renderIncomingChallenges();
   renderBettorRecordStrip();
+  renderLiveTracker();
   renderTailBets();
   renderH2HLeaderboard();
   renderFuturesBoard('futures-champion-board', 'champion');
@@ -5112,6 +5435,7 @@ async function loadNflGames() {
   NFL_GAMES = (data || []).slice().sort((a, b) => new Date(a.kickoff || 0) - new Date(b.kickoff || 0));
   renderNflGames();
   renderNflProps();
+  renderLiveTracker();
 }
 function subscribeNflGames() {
   supabaseClient.channel('nfl-games-changes')
@@ -5261,6 +5585,7 @@ async function loadNflProps() {
   if (error) { console.error('loadNflProps failed', error); return; }
   NFL_PROPS = data || [];
   renderNflProps();
+  renderLiveTracker();
 }
 function subscribeNflProps() {
   supabaseClient.channel('nfl-props-changes')
