@@ -2533,15 +2533,20 @@ function isH2HItem(item) { return H2H_BET_TYPES.includes(item.type) && item.team
 // the winner stake*2 (their own stake back plus the loser's), so only the
 // stake itself (the loser's half) counts as something actually "won."
 function computeH2HLeaderboard() {
+  // activeTeams() -- not the raw LEAGUE_DATA.teams list -- so a franchise
+  // flagged excludeFromRecords (e.g. Team Saxon, retired from the league)
+  // stays off this board the same way it's already kept off every other
+  // standings/leaderboard and out of every "pick a team" dropdown.
+  const eligible = activeTeams();
   const totals = {};
-  (LEAGUE_DATA.teams || []).forEach(t => { totals[t.id] = { won: 0, w: 0, l: 0 }; });
+  eligible.forEach(t => { totals[t.id] = { won: 0, w: 0, l: 0 }; });
   (LEAGUE_DATA.bets || []).forEach(b => {
     if (!isH2HItem(b) || b.status !== 'settled' || b.result === 'push' || !b.winnerTeamId) return;
     const loserTeamId = b.winnerTeamId === b.teamA ? b.teamB : b.teamA;
     if (totals[b.winnerTeamId]) { totals[b.winnerTeamId].won += Number(b.stake) || 0; totals[b.winnerTeamId].w += 1; }
     if (totals[loserTeamId]) { totals[loserTeamId].l += 1; }
   });
-  return (LEAGUE_DATA.teams || [])
+  return eligible
     .map(t => ({ id: t.id, name: t.name, owner: t.owner || 'Manager TBD', ...totals[t.id] }))
     .sort((a, b) => b.won - a.won || b.w - a.w || a.name.localeCompare(b.name));
 }
