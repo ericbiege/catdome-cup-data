@@ -4291,7 +4291,6 @@ if (futuresSubtabBar) futuresSubtabBar.addEventListener('click', e => {
   const tab = tabBtn.dataset.futuresSubtab;
   futuresSubtabBar.querySelectorAll('[data-futures-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
   document.querySelectorAll('.futures-subpanel').forEach(p => p.classList.toggle('active', p.dataset.futuresSubpanel === tab));
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 });
 
 // H2H Challenge sub-tabs: one bet type per tab instead of a long scroll --
@@ -4304,7 +4303,6 @@ if (h2hSubtabBar) h2hSubtabBar.addEventListener('click', e => {
   const tab = tabBtn.dataset.h2hSubtab;
   h2hSubtabBar.querySelectorAll('[data-h2h-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
   document.querySelectorAll('.h2h-subpanel').forEach(p => p.classList.toggle('active', p.dataset.h2hSubpanel === tab));
-  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 });
 
 // My Bets: category tabs (Challenges / League Bets / NFL Lines / Futures) plus
