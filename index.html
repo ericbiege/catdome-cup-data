@@ -4247,6 +4247,18 @@ if (pickemTabBar) pickemTabBar.addEventListener('click', e => {
   window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 });
 
+// Switches which panel in a NodeList is "active" without ever letting every
+// panel be inactive at once: activate the target first, then deactivate the
+// rest. Toggling all of them in one pass (the old approach) has a moment
+// where the outgoing panel has already lost .active and the incoming one
+// hasn't gained it yet -- with every subpanel display:none, the page's
+// scrollable height collapses out from under the browser and it snaps
+// scrollY back to 0, which is exactly the "jumps to the top" bug this fixes.
+function activateSubpanel(panels, matchAttr, tab) {
+  panels.forEach(p => { if (p.dataset[matchAttr] === tab) p.classList.add('active'); });
+  panels.forEach(p => { if (p.dataset[matchAttr] !== tab) p.classList.remove('active'); });
+}
+
 // NFL sub-tabs: Game Lines / TD Scorers / Passing / Receiving / Rushing.
 const nflSubtabBar = document.querySelector('.nfl-subtabs');
 if (nflSubtabBar) nflSubtabBar.addEventListener('click', e => {
@@ -4254,7 +4266,7 @@ if (nflSubtabBar) nflSubtabBar.addEventListener('click', e => {
   if (!tabBtn) return;
   const tab = tabBtn.dataset.nflSubtab;
   nflSubtabBar.querySelectorAll('[data-nfl-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
-  document.querySelectorAll('.nfl-subpanel').forEach(p => p.classList.toggle('active', p.dataset.nflSubpanel === tab));
+  activateSubpanel(document.querySelectorAll('.nfl-subpanel'), 'nflSubpanel', tab);
 });
 
 // Prop-type toggle buttons within Passing/Receiving/Rushing (e.g. "Pass Yards" vs "Pass Yards O/U").
@@ -4278,7 +4290,7 @@ if (laSubtabBar) laSubtabBar.addEventListener('click', e => {
   if (!tabBtn) return;
   const tab = tabBtn.dataset.laSubtab;
   laSubtabBar.querySelectorAll('[data-la-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
-  document.querySelectorAll('.la-subpanel').forEach(p => p.classList.toggle('active', p.dataset.laSubpanel === tab));
+  activateSubpanel(document.querySelectorAll('.la-subpanel'), 'laSubpanel', tab);
 });
 
 // Futures sub-tabs: Champion / Top 3 / Toilet Bowl / Waiver Wire King / Trade
@@ -4290,7 +4302,7 @@ if (futuresSubtabBar) futuresSubtabBar.addEventListener('click', e => {
   if (!tabBtn) return;
   const tab = tabBtn.dataset.futuresSubtab;
   futuresSubtabBar.querySelectorAll('[data-futures-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
-  document.querySelectorAll('.futures-subpanel').forEach(p => p.classList.toggle('active', p.dataset.futuresSubpanel === tab));
+  activateSubpanel(document.querySelectorAll('.futures-subpanel'), 'futuresSubpanel', tab);
 });
 
 // H2H Challenge sub-tabs: one bet type per tab instead of a long scroll --
@@ -4302,7 +4314,7 @@ if (h2hSubtabBar) h2hSubtabBar.addEventListener('click', e => {
   if (!tabBtn) return;
   const tab = tabBtn.dataset.h2hSubtab;
   h2hSubtabBar.querySelectorAll('[data-h2h-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
-  document.querySelectorAll('.h2h-subpanel').forEach(p => p.classList.toggle('active', p.dataset.h2hSubpanel === tab));
+  activateSubpanel(document.querySelectorAll('.h2h-subpanel'), 'h2hSubpanel', tab);
 });
 
 // My Bets: category tabs (Challenges / League Bets / NFL Lines / Futures) plus
