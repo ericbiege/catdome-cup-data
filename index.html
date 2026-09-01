@@ -5022,6 +5022,29 @@ function goToSearchBet(betId) {
   window.location.hash = '#/pickem';
   setTimeout(() => {
     setPickemTab('mybets');
+    // My Bets only ever renders ONE category (Challenges/League/NFL/Futures)
+    // and ONE status filter (All/Open/Settled/Won/Lost) into the DOM at a
+    // time -- see renderMyWagers(). A bet found by search can live in any
+    // combination of those, so point both filters at "wherever this bet
+    // actually is" before looking for its row, same as clicking the tabs by
+    // hand would.
+    const bet = (LEAGUE_DATA.bets || []).find(b => String(b.id) === String(betId));
+    if (bet) {
+      const cat = betCategoryOf(bet);
+      const catBar = document.querySelector('.mybets-cat-tabs');
+      const catBtn = catBar && catBar.querySelector(`[data-mybets-cat="${cat}"]`);
+      if (catBtn) {
+        myBetsCategory = cat;
+        catBar.querySelectorAll('[data-mybets-cat]').forEach(b => b.setAttribute('aria-current', b === catBtn ? 'true' : 'false'));
+      }
+      const statusBar = document.querySelector('.mybets-status-tabs');
+      const statusBtn = statusBar && statusBar.querySelector('[data-mybets-status="all"]');
+      if (statusBtn) {
+        myBetsStatus = 'all';
+        statusBar.querySelectorAll('[data-mybets-status]').forEach(b => b.setAttribute('aria-current', b === statusBtn ? 'true' : 'false'));
+      }
+      renderMyWagers();
+    }
     const row = document.querySelector(`.bet-ledger-row[data-bet-id="${betId}"]`);
     if (row) {
       row.scrollIntoView({ behavior: 'smooth', block: 'center' });
