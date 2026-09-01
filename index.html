@@ -3059,6 +3059,14 @@ function tailBet(betId) {
   const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
   const subtab = bet && TAIL_SUBTAB_BY_TYPE[bet.type];
   if (!subtab) return;
+  const pickemView = document.getElementById('view-pickem');
+  if (pickemView && !pickemView.classList.contains('active')) {
+    // Jump to the Sportsbook view first (e.g. when tailing from a News post),
+    // using replaceState so this doesn't fire an async hashchange re-render
+    // that would wipe out the prefill we're about to set below.
+    history.replaceState(null, '', '#/pickem');
+    showView('pickem');
+  }
   setPickemTab('props');
   const subtabBtn = document.querySelector(`.h2h-subtab-btn[data-h2h-subtab="${subtab}"]`);
   if (subtabBtn) subtabBtn.click();
