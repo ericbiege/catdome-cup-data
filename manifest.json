@@ -1,0 +1,8 @@
+{
+  "name": "Catdome Cup",
+  "short_name": "Catdome Cup",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2c0f45",
+  "theme_color": "#2c0f45"
+}

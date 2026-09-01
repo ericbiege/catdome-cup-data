@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Catdome Cup</title>
+<link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@600;700;800;900&family=Big+Shoulders+Display:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -552,6 +553,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 }
 .site-search-toggle:hover { background: rgba(238,242,234,0.08); color: #fff; }
 .site-search-toggle[aria-expanded="true"] { background: var(--gold); color: var(--field); }
+
+.notify-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; background: transparent; border: none; border-radius: 6px;
+  color: #c7d3c4; font-size: 16px; cursor: pointer; transition: background 0.15s, color 0.15s;
+}
+.notify-toggle:hover { background: rgba(238,242,234,0.08); color: #fff; }
+.notify-toggle[aria-pressed="true"] { background: var(--gold); color: var(--field); }
 .site-search-panel {
   position: absolute; top: calc(100% + 10px); left: 0; z-index: 60;
   width: 340px; max-width: calc(100vw - 40px);
@@ -1097,6 +1106,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div class="site-search-results" id="site-search-results"></div>
       </div>
     </div>
+    <button type="button" class="notify-toggle" id="notify-toggle" aria-pressed="false" hidden title="Get notified about challenges (and more, soon)">&#128276;</button>
     <nav class="tabs" aria-label="Site sections">
       <button data-nav="home">Home</button>
       <button data-nav="pickem">Sportsbook</button>
@@ -2857,6 +2867,7 @@ async function loadCatpoints() {
   CATPOINTS_BALANCES.clear();
   for (const row of data || []) CATPOINTS_BALANCES.set(row.team_id, Number(row.balance) || 0);
   renderCatpointsChip();
+  renderNotifyToggle();
   updateSlipTotal();
   await loadCatpointsWeekly();
   renderHomeStandings();
@@ -3128,6 +3139,12 @@ async function placeSlip() {
     } else {
       placedH2HId = betId;
       postNewsAuto(`${teamName(currentActingTeamId)} sent an H2H challenge: ${stripEntities(item.summary)} for ${cp(stake)}.`, 'bet_result', currentActingTeamId);
+      sendPushNotification(item.teamB, {
+        title: `${teamName(currentActingTeamId)} challenged you`,
+        body: `${stripEntities(item.summary)} for ${cp(stake)} — accept or decline in My Bets.`,
+        url: '/#/pickem/accept/' + betId,
+        tag: 'challenge-' + betId,
+      });
     }
     LEAGUE_DATA.bets = [...(LEAGUE_DATA.bets || []), mapBetRow(data)];
   }
@@ -4104,6 +4121,7 @@ function renderPickEm() {
   if (bookTabBtn) bookTabBtn.hidden = !isAdmin();
   if (isAdmin()) renderAdminPanel();
   renderCatpointsChip();
+  renderNotifyToggle();
   renderSlip();
   renderMyWagers();
   renderIncomingChallenges();
@@ -4802,6 +4820,7 @@ function setUserBadge() {
     if (composeAvatar) composeAvatar.innerHTML = '?';
   }
   renderCatpointsChip();
+  renderNotifyToggle();
 }
 
 function showAuthGate() {
@@ -5407,6 +5426,98 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && siteSearchPanel && !siteSearchPanel.hidden) closeSiteSearch();
 });
+
+/* -------- push notifications (header bell) --------
+   Web Push, not a native app -- a service worker (sw.js, served from the
+   site root) plus a subscription row in push_subscriptions is the whole
+   client-side mechanism. The only trigger wired up so far is an H2H
+   challenge landing (see placeSlip()'s h2h branch below) -- a bet settling
+   or a weekly recap posting are natural next triggers, each just needing a
+   small addition to that Edge Function, reusing the same send-push
+   function and push_subscriptions table this already sets up.
+   Only registers the service worker / requests permission on an explicit
+   click of the bell -- never on page load, since an unprompted permission
+   request is exactly the kind of thing browsers (rightly) punish. */
+const VAPID_PUBLIC_KEY = 'BHDN4NrAieJhJFrwPpvfm5qYOTvaaAxHSTRlrdXJI6N8Rq10fTK5HSmP4jQFH8AAwR-zcbEXnPsamURt1RDt0k0';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+function pushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+async function isPushSubscribed() {
+  if (!pushSupported()) return false;
+  try {
+    const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+    if (!reg) return false;
+    const sub = await reg.pushManager.getSubscription();
+    return !!sub;
+  } catch { return false; }
+}
+async function renderNotifyToggle() {
+  const btn = document.getElementById('notify-toggle');
+  if (!btn) return;
+  if (!pushSupported() || !currentActingTeamId) { btn.hidden = true; return; }
+  btn.hidden = false;
+  const subscribed = await isPushSubscribed();
+  btn.setAttribute('aria-pressed', subscribed ? 'true' : 'false');
+  btn.title = subscribed ? "Notifications on -- click to turn off" : 'Get notified about challenges (and more, soon)';
+}
+async function subscribeToPush() {
+  if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
+  try {
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      showToast('Notifications blocked -- you can turn them back on from your browser settings anytime.');
+      return;
+    }
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+    const json = sub.toJSON();
+    const { error } = await supabaseClient.from('push_subscriptions').upsert({
+      team_id: currentActingTeamId, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth,
+    }, { onConflict: 'endpoint' });
+    if (error) { console.error('saving push subscription failed', error); showToast("Couldn't turn on notifications -- try again."); return; }
+    showToast("Notifications on -- you'll hear about challenges as they land.");
+  } catch (e) {
+    console.error('subscribeToPush failed', e);
+    showToast("Couldn't turn on notifications -- try again.");
+  }
+  renderNotifyToggle();
+}
+async function unsubscribeFromPush() {
+  try {
+    const reg = await navigator.serviceWorker.getRegistration('/sw.js');
+    const sub = reg && await reg.pushManager.getSubscription();
+    if (sub) {
+      await supabaseClient.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+      await sub.unsubscribe();
+    }
+    showToast('Notifications off.');
+  } catch (e) {
+    console.error('unsubscribeFromPush failed', e);
+  }
+  renderNotifyToggle();
+}
+const notifyToggleBtn = document.getElementById('notify-toggle');
+if (notifyToggleBtn) notifyToggleBtn.addEventListener('click', async () => {
+  const subscribed = await isPushSubscribed();
+  if (subscribed) unsubscribeFromPush(); else subscribeToPush();
+});
+
+// Fire-and-forget: a failed push should never block or surface an error in
+// the middle of an unrelated action (placing a bet, etc.) -- notifications
+// are a nice-to-have layered on top, not core functionality.
+function sendPushNotification(teamId, { title, body, url, tag }) {
+  if (!teamId) return;
+  supabaseClient.functions.invoke('send-push', { body: { teamId, title, body, url, tag } })
+    .catch(e => console.error('sendPushNotification failed', e));
+}
 
 const weeklyMatchupsList = document.getElementById('weekly-matchups-list');
 if (weeklyMatchupsList) weeklyMatchupsList.addEventListener('click', e => {
