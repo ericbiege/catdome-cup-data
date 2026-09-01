@@ -724,6 +724,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .bet-ledger-remove.confirming { color: #fff; background: var(--crimson); font-size: 11px; font-family: var(--font-mono); font-weight: 700; padding: 4px 8px; }
 .bet-ledger-summary { font-size: 14px; }
 .bet-ledger-result { font-size: 13px; color: var(--ink-dim); }
+.bet-ledger-margin-note { font-style: italic; opacity: 0.85; }
 .bet-ledger-settle { display: flex; gap: 8px; flex-wrap: wrap; }
 .bet-ledger-settle input, .bet-ledger-settle select { flex: 1; min-width: 140px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--paper-raised); color: var(--ink); font-family: var(--font-body); font-size: 13px; }
 .bet-ledger-row.highlight { border-color: var(--gold); box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 25%, transparent); }
@@ -1036,6 +1037,11 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <div class="hero-stats" id="home-hero-stats"></div>
     </div>
 
+    <div id="home-pending-challenges-section" hidden>
+      <div class="yardline" data-label="Challenges Awaiting You"></div>
+      <div id="home-pending-challenges-list"></div>
+    </div>
+
     <div class="yardline" data-label="Reigning Champion"></div>
     <div id="home-champ-spotlight"></div>
 
@@ -1071,9 +1077,9 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <div class="la-subtabs" role="tablist" aria-label="League Action sections">
         <button type="button" class="la-subtab-btn" data-la-subtab="lines" aria-current="true">Catdome Game Lines</button>
         <button type="button" class="la-subtab-btn" data-la-subtab="td" aria-current="false">TD Scorers</button>
-        <button type="button" class="la-subtab-btn" data-la-subtab="passing" aria-current="false">Passing</button>
-        <button type="button" class="la-subtab-btn" data-la-subtab="receiving" aria-current="false">Receiving</button>
-        <button type="button" class="la-subtab-btn" data-la-subtab="rushing" aria-current="false">Running</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="passing" aria-current="false">Fantasy Passing</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="receiving" aria-current="false">Fantasy Receiving</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="rushing" aria-current="false">Fantasy Rushing</button>
         <button type="button" class="la-subtab-btn" data-la-subtab="tail" aria-current="false">Tail Bets</button>
       </div>
 
@@ -1818,7 +1824,20 @@ function el(tag, cls, html) { const e = document.createElement(tag); if (cls) e.
 /* ================= router / nav ================= */
 const VIEWS = ['home', 'pickem', 'teams', 'team', 'records', 'recaps'];
 let activeTeamId = null;
-let activeStandingsYear = LEAGUE_DATA.league.currentSeason;
+// Default Records to the most recent season that's actually been played,
+// not just the current one -- pre-Week 1 (or any offseason stretch), the
+// "current" season's standings are a wall of 0-0 rows with last season's
+// real, more interesting final table one click away. Explicitly navigating
+// to a year (e.g. clicking a season pill, or a #/records/2024 link) always
+// overrides this and is preserved for the rest of the session (see
+// navigate() below).
+function defaultStandingsYear() {
+  const seasons = (LEAGUE_DATA.seasons || []).slice().sort((a, b) => b.year - a.year);
+  const played = seasons.find(s => (s.games || []).length > 0
+    || (s.standings || []).some(r => (r.wins || 0) + (r.losses || 0) + (r.ties || 0) > 0));
+  return played ? played.year : LEAGUE_DATA.league.currentSeason;
+}
+let activeStandingsYear = defaultStandingsYear();
 let pendingHighlightId = null;
 
 function navigate(hash) {
@@ -1978,6 +1997,38 @@ function renderHome() {
 
   renderHomeStandings();
   renderHomeTrendingBets();
+  renderHomePendingChallenges();
+}
+
+// A pending H2H challenge is the single most actionable thing a manager can
+// see on Home -- it expires unanswered, and the full accept/decline flow
+// otherwise only lives three taps deep in Sportsbook > My Bets (see
+// renderIncomingChallenges below, which this mirrors). The section stays
+// hidden entirely when there's nothing pending, so Home never gets noisier
+// for a manager with a clean slate.
+function renderHomePendingChallenges() {
+  const section = document.getElementById('home-pending-challenges-section');
+  const wrap = document.getElementById('home-pending-challenges-list');
+  if (!section || !wrap) return;
+  if (!currentActingTeamId) { section.hidden = true; return; }
+  const incoming = (LEAGUE_DATA.bets || [])
+    .filter(b => b.status === 'pending' && b.teamB === currentActingTeamId && H2H_BET_TYPES.includes(b.type))
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  if (!incoming.length) { section.hidden = true; wrap.innerHTML = ''; return; }
+  section.hidden = false;
+  wrap.innerHTML = incoming.map(b => `
+    <div class="card bet-ledger-row" data-bet-id="${b.id}">
+      <div class="bet-ledger-top">
+        <span class="badge pending">Challenge from ${teamName(b.placedBy)}</span>
+        <span class="bet-ledger-date mono">${b.createdAt}</span>
+      </div>
+      <div class="bet-ledger-summary">${b.summary}</div>
+      <div class="h2h-stake-line">You each stake ${cp(b.stake)} &mdash; winner takes ${cp((b.stake || 0) * 2)}.</div>
+      <div class="h2h-actions">
+        <button class="btn" type="button" data-accept-challenge="${b.id}">Accept</button>
+        <button class="btn ghost decline" type="button" data-decline-challenge="${b.id}">Decline</button>
+      </div>
+    </div>`).join('');
 }
 
 // ---- Home: Catpoints Standings Tracker -----------------------------------
@@ -3045,7 +3096,8 @@ function renderMyWagers() {
       const change = b.result === 'win' ? `+${cp((b.potentialPayout ?? b.stake) - (b.stake || 0))}`
         : b.result === 'push' ? 'Stake refunded' : `-${cp(b.stake || 0)}`;
       const label = b.result === 'win' ? 'Won' : b.result === 'push' ? 'Push' : 'Lost';
-      resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}</div>`;
+      const marginNote = (b.result === 'loss' && b.settleDetail) ? ` <span class="bet-ledger-margin-note">(${b.settleDetail})</span>` : '';
+      resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}${marginNote}</div>`;
     } else if (b.status === 'pending') {
       resultHtml = `<div class="bet-ledger-result">Waiting on ${teamName(b.teamB)} to accept.</div>`;
     } else if (b.status === 'declined') {
@@ -3342,6 +3394,7 @@ function refreshBetViews() {
     renderTeamDetail(activeTeamId);
   }
   renderHomeTrendingBets();
+  renderHomePendingChallenges();
   maybeShowAcceptModal();
 }
 
@@ -3378,6 +3431,7 @@ function mapBetRow(row) {
     playerB: row.player_b || null,
     settledBy: row.settled_by || null,
     needsReview: !!row.needs_review,
+    settleDetail: row.settle_detail || null,
   };
 }
 
@@ -3537,7 +3591,8 @@ function teamBetLogRowHtml(b) {
     const change = b.result === 'win' ? `+${cp((b.potentialPayout ?? b.stake) - (b.stake || 0))}`
       : b.result === 'push' ? 'Stake refunded' : `-${cp(b.stake || 0)}`;
     const label = b.result === 'win' ? 'Won' : b.result === 'push' ? 'Push' : 'Lost';
-    resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}</div>`;
+    const marginNote = (b.result === 'loss' && b.settleDetail) ? ` <span class="bet-ledger-margin-note">(${b.settleDetail})</span>` : '';
+    resultHtml = `<div class="bet-ledger-result"><b>${label}</b> &mdash; ${change}${marginNote}</div>`;
   } else if (b.needsReview) {
     resultHtml = '<div class="bet-ledger-result">Flagged for the book to review.</div>';
   }
@@ -5343,6 +5398,7 @@ function subscribeRecaps() {
 /* ================= News: Twitter-style feed ================= */
 const NEWS_CATEGORY_LABELS = {
   bet_result: 'Bet Result', waiver: 'Waiver Wire', trade: 'Trade', game_result: 'Game Result', general: 'League Chatter',
+  weekly_recap: 'Week Recap',
 };
 
 // Reaction bar on every news post -- more than just the original 🔥, so
