@@ -5085,6 +5085,7 @@ if (tradePlaceBtn) tradePlaceBtn.addEventListener('click', () => {
     summary: `${teamName(a)} &amp; ${teamName(b)} trade ${tradeCallLabel} by Week ${tradeWeek} &mdash; Trade Deadline Chaos`,
     text: buildTradeText(),
     teamA: a, teamB: b, week: tradeWeek,
+    market: document.getElementById('trade-call').value,
   });
   statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
