@@ -107,6 +107,7 @@ button { font-family: inherit; }
 .wordmark .school-logo { height: 34px; width: auto; display: block; }
 nav.tabs { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
 nav.tabs button {
+  position: relative;
   background: transparent; border: none; color: #c7d3c4;
   font-family: var(--font-display); font-weight: 700; font-size: 15px; letter-spacing: 0.03em;
   text-transform: uppercase; padding: 9px 14px; border-radius: 6px; cursor: pointer;
@@ -114,6 +115,15 @@ nav.tabs button {
 }
 nav.tabs button:hover { background: rgba(238,242,234,0.08); color: #fff; }
 nav.tabs button[aria-current="true"] { background: var(--gold); color: var(--field); }
+
+/* ---------- Notification dots: unresponded challenges / unseen @mentions ---------- */
+.tab-alert-dot {
+  position: absolute; top: 5px; right: 5px; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--crimson); box-shadow: 0 0 0 2px var(--field);
+}
+.pickem-tab-btn .tab-alert-dot { box-shadow: 0 0 0 2px var(--paper-sunken); top: 4px; right: 4px; }
+.pickem-tab-btn[aria-current="true"] .tab-alert-dot { box-shadow: 0 0 0 2px var(--gold); }
+.tab-alert-dot[hidden] { display: none; }
 
 main { max-width: 1180px; margin: 0 auto; padding: 32px 20px 80px; }
 .view { display: none; }
@@ -491,6 +501,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 
 .pickem-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
 .pickem-tab-btn {
+  position: relative;
   font-family: var(--font-ui); font-size: 13px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase;
   background: var(--paper-sunken); border: 1px solid var(--line); color: var(--ink-dim);
   padding: 10px 18px; border-radius: 999px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -760,6 +771,78 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .h2h-actions .btn.decline:hover { background: var(--crimson); color: #fff; }
 .h2h-stake-line { font-family: var(--font-mono); font-size: 12px; color: var(--ink-dim); margin-top: 4px; }
 
+/* ---------- Futures: same sub-tab pattern as NFL Game Lines / League Action ---------- */
+.futures-subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.futures-subtab-btn {
+  font-family: var(--font-ui); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+  padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.futures-subtab-btn:hover { color: var(--ink); border-color: var(--gold); }
+.futures-subtab-btn[aria-current="true"] { background: var(--field); border-color: var(--field); color: #fff; }
+.futures-subpanel { display: none; }
+.futures-subpanel.active { display: block; animation: fade-in 0.2s ease both; }
+
+/* ---------- H2H Challenge: same sub-tab pattern, one bet type per tab ---------- */
+.h2h-subtabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.h2h-subtab-btn {
+  font-family: var(--font-ui); font-size: 12px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+  padding: 7px 14px; border-radius: 999px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.h2h-subtab-btn:hover { color: var(--ink); border-color: var(--gold); }
+.h2h-subtab-btn[aria-current="true"] { background: var(--field); border-color: var(--field); color: #fff; }
+.h2h-subpanel { display: none; }
+.h2h-subpanel.active { display: block; animation: fade-in 0.2s ease both; }
+
+/* ---------- My Bets: category tabs + DraftKings-style status filter ---------- */
+.mybets-cat-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.mybets-cat-btn {
+  font-family: var(--font-ui); font-size: 13px; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase;
+  background: var(--paper-sunken); border: 1px solid var(--line); color: var(--ink-dim);
+  padding: 9px 16px; border-radius: 999px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mybets-cat-btn:hover { color: var(--ink); border-color: var(--gold); }
+.mybets-cat-btn[aria-current="true"] { background: var(--gold); border-color: var(--gold); color: #fff; }
+.mybets-status-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.mybets-status-btn {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  background: transparent; border: 1px solid var(--line); color: var(--ink-dim);
+  padding: 6px 12px; border-radius: 8px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.mybets-status-btn:hover { border-color: var(--gold); }
+.mybets-status-btn[aria-current="true"] { background: var(--field); border-color: var(--field); color: #fff; }
+
+/* ---------- Parlay leg progress: green = hit, red = miss, hollow = still open ---------- */
+.parlay-progress { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.parlay-dot { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line); background: transparent; flex-shrink: 0; }
+.parlay-dot.hit { background: var(--green-accent); border-color: var(--green-accent); }
+.parlay-dot.miss { background: var(--crimson); border-color: var(--crimson); }
+.parlay-dot.open { background: transparent; border-color: var(--ink-dim); }
+.parlay-progress-legend { font-family: var(--font-mono); font-size: 10px; color: var(--ink-dim); margin-left: 2px; }
+
+/* ---------- Win celebration banner ---------- */
+.bet-win-banner {
+  display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 8px 12px; border-radius: 8px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--gold) 20%, transparent), color-mix(in srgb, var(--green-accent) 16%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent);
+  font-family: var(--font-ui); font-weight: 800; font-size: 13px; color: var(--gold-strong);
+}
+.bet-win-banner .trophy { font-size: 18px; }
+
+/* ---------- News: @mentions ---------- */
+.mention {
+  color: var(--gold-strong); font-weight: 700; cursor: pointer; text-decoration: none;
+}
+.mention:hover { text-decoration: underline; }
+.news-post.mention-pinned { background: color-mix(in srgb, var(--gold) 8%, transparent); border-radius: 10px; border-bottom-color: transparent; }
+.news-mention-tag {
+  display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-mono); font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--gold-strong); border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
+  border-radius: 999px; padding: 1px 8px; margin-bottom: 4px;
+}
+#news-compose-wrap { position: relative; }
+
 /* ---------- News: Twitter-style feed, mobile-first ---------- */
 .news-compose {
   background: var(--paper-raised); border: 1px solid var(--line); border-radius: var(--radius);
@@ -895,7 +978,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <button data-nav="pickem">Sportsbook</button>
       <button data-nav="teams">Teams</button>
       <button data-nav="records">Records</button>
-      <button data-nav="recaps">News</button>
+      <button data-nav="recaps">News<span class="tab-alert-dot" id="news-nav-alert-dot" hidden></span></button>
     </nav>
   </div>
 </header>
@@ -938,7 +1021,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
   <section class="view" id="view-pickem">
     <div class="section-head">
       <div>
-        <div class="eyebrow">The Gambling Cave</div>
+        <div class="eyebrow">The Gambling Den</div>
         <h2 class="sportsbook-heading">Catdome Sportsbook</h2>
         <div class="desc">Every manager starts the season with 800 Catpoints. Win bets, win games, or work the waiver wire and trade market to build your bankroll.</div>
       </div>
@@ -949,7 +1032,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <button type="button" class="pickem-tab-btn" data-pickem-tab="nfl" aria-current="false">NFL Game Lines</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="futures" aria-current="false">Futures</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="props" aria-current="false">H2H Challenge</button>
-      <button type="button" class="pickem-tab-btn" data-pickem-tab="mybets" aria-current="false">My Bets</button>
+      <button type="button" class="pickem-tab-btn" data-pickem-tab="mybets" aria-current="false">My Bets<span class="tab-alert-dot" id="mybets-alert-dot" hidden></span></button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="book" aria-current="false" hidden>The Book</button>
     </div>
 
@@ -1149,205 +1232,227 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     </div>
 
     <div class="pickem-panel" data-pickem-panel="futures">
-      <div class="yardline" data-label="Futures &middot; Catdome Cup Champion"></div>
-      <div class="desc" style="margin-bottom:14px;">Odds are generated from each team's actual championship rate across every completed Catdome Cup season &mdash; not Vegas math, just history repeating itself. Or not. <b>Futures close Week 1.</b></div>
-      <div class="futures-grid" id="futures-champion-board"></div>
+      <div class="futures-subtabs" role="tablist" aria-label="Futures markets">
+        <button type="button" class="futures-subtab-btn" data-futures-subtab="champion" aria-current="true">Catdome Cup Champion</button>
+        <button type="button" class="futures-subtab-btn" data-futures-subtab="top3" aria-current="false">Top 3 Finish</button>
+        <button type="button" class="futures-subtab-btn" data-futures-subtab="sacko" aria-current="false">Toilet Bowl Watch</button>
+        <button type="button" class="futures-subtab-btn" data-futures-subtab="waiver" aria-current="false">Waiver Wire King</button>
+        <button type="button" class="futures-subtab-btn" data-futures-subtab="trade" aria-current="false">Trade Deadline Chaos</button>
+      </div>
 
-      <div class="yardline" data-label="Futures &middot; Top 3 Finish"></div>
-      <div class="desc" style="margin-bottom:14px;">Same math, wider net &mdash; each team's actual top-3 finish rate across every completed season.</div>
-      <div class="futures-grid" id="futures-top3-board"></div>
+      <div class="futures-subpanel active" data-futures-subpanel="champion">
+        <div class="yardline" data-label="Futures &middot; Catdome Cup Champion"></div>
+        <div class="desc" style="margin-bottom:14px;">Odds are generated from each team's actual championship rate across every completed Catdome Cup season &mdash; not Vegas math, just history repeating itself. Or not. <b>Futures close Week 1.</b></div>
+        <div class="futures-grid" id="futures-champion-board"></div>
+      </div>
 
-      <div class="yardline" data-label="Futures &middot; Toilet Bowl Watch"></div>
-      <div class="desc" style="margin-bottom:14px;">The inverse market, for managers who prefer betting on chaos. Based on each team's historical last-place rate.</div>
-      <div class="futures-grid" id="futures-sacko-board"></div>
+      <div class="futures-subpanel" data-futures-subpanel="top3">
+        <div class="yardline" data-label="Futures &middot; Top 3 Finish"></div>
+        <div class="desc" style="margin-bottom:14px;">Same math, wider net &mdash; each team's actual top-3 finish rate across every completed season.</div>
+        <div class="futures-grid" id="futures-top3-board"></div>
+      </div>
 
-      <div class="yardline" data-label="Futures &middot; Waiver Wire King"></div>
-      <div class="desc" style="margin-bottom:14px;">Which front office can't leave the wire alone? Odds are built from real transaction logs &mdash; how often each team has actually led the league in waiver moves in a season.</div>
-      <div class="futures-grid" id="futures-waiver-board"></div>
+      <div class="futures-subpanel" data-futures-subpanel="sacko">
+        <div class="yardline" data-label="Futures &middot; Toilet Bowl Watch"></div>
+        <div class="desc" style="margin-bottom:14px;">The inverse market, for managers who prefer betting on chaos. Based on each team's historical last-place rate.</div>
+        <div class="futures-grid" id="futures-sacko-board"></div>
+      </div>
 
-      <div class="yardline" data-label="Trade Deadline Chaos"></div>
-      <div class="desc" style="margin-bottom:14px;">Stake Catpoints on whether a trade happens before a deadline week &mdash; a season-long market, same as the boards above.</div>
-      <div class="card bet-builder" id="trade-builder">
-        <div class="row2">
-          <div>
-            <label for="trade-team-a">Team A</label>
-            <select id="trade-team-a"></select>
+      <div class="futures-subpanel" data-futures-subpanel="waiver">
+        <div class="yardline" data-label="Futures &middot; Waiver Wire King"></div>
+        <div class="desc" style="margin-bottom:14px;">Which front office can't leave the wire alone? Odds are built from real transaction logs &mdash; how often each team has actually led the league in waiver moves in a season.</div>
+        <div class="futures-grid" id="futures-waiver-board"></div>
+      </div>
+
+      <div class="futures-subpanel" data-futures-subpanel="trade">
+        <div class="yardline" data-label="Trade Deadline Chaos"></div>
+        <div class="desc" style="margin-bottom:14px;">Stake Catpoints on whether a trade happens before a deadline week &mdash; a season-long market, same as the boards above.</div>
+        <div class="card bet-builder" id="trade-builder">
+          <div class="row2">
+            <div>
+              <label for="trade-team-a">Team A</label>
+              <select id="trade-team-a"></select>
+            </div>
+            <div>
+              <label for="trade-team-b">Team B</label>
+              <select id="trade-team-b"></select>
+            </div>
           </div>
-          <div>
-            <label for="trade-team-b">Team B</label>
-            <select id="trade-team-b"></select>
+          <div class="row2">
+            <div>
+              <label for="trade-call">Your Call</label>
+              <select id="trade-call">
+                <option value="yes">A trade happens</option>
+                <option value="no">No trade happens</option>
+              </select>
+            </div>
+            <div>
+              <label for="trade-week">By Week</label>
+              <input type="number" id="trade-week" min="1" max="17" value="8">
+            </div>
           </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label for="trade-call">Your Call</label>
-            <select id="trade-call">
-              <option value="yes">A trade happens</option>
-              <option value="no">No trade happens</option>
-            </select>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="trade-place">Add to Slip</button>
+            <div class="form-status" id="trade-status"></div>
           </div>
-          <div>
-            <label for="trade-week">By Week</label>
-            <input type="number" id="trade-week" min="1" max="17" value="8">
-          </div>
-        </div>
-        <div class="bet-actions">
-          <button class="btn" type="button" id="trade-place">Add to Slip</button>
-          <div class="form-status" id="trade-status"></div>
         </div>
       </div>
     </div>
 
     <div class="pickem-panel" data-pickem-panel="props">
       <div class="desc" style="margin-bottom:18px;">Stake Catpoints against a friend &mdash; not the book. Build a challenge below, add it to your slip, then hit <b>Send Challenge</b> from My Bets to text it over. Nothing's live (and no Catpoints move) until they accept.</div>
-      <div class="props-parlay-grid">
-        <div>
-          <div class="yardline" data-label="Outscore Their Guy"></div>
-          <div class="desc" style="margin-bottom:14px;">Pick a player off your roster to outscore a player off theirs. Fantasy points only, that week only.</div>
-          <div class="card bet-builder" id="prop-builder">
-            <div class="row2">
-              <div>
-                <label for="prop-team-a">Your Team</label>
-                <select id="prop-team-a"></select>
-              </div>
-              <div>
-                <label for="prop-player-a">Your Player</label>
-                <div class="ac-wrap"><input type="text" id="prop-player-a" placeholder="e.g. Puka Nacua" autocomplete="off"><div class="ac-menu" hidden></div></div>
-              </div>
+
+      <div class="h2h-subtabs" role="tablist" aria-label="H2H Challenge types">
+        <button type="button" class="h2h-subtab-btn" data-h2h-subtab="outscore" aria-current="true">Outscore Their Guy</button>
+        <button type="button" class="h2h-subtab-btn" data-h2h-subtab="parlay" aria-current="false">TD Parlay Duel</button>
+        <button type="button" class="h2h-subtab-btn" data-h2h-subtab="shootout" aria-current="false">Full Slate Shootout</button>
+        <button type="button" class="h2h-subtab-btn" data-h2h-subtab="duel" aria-current="false">Position Duel</button>
+        <button type="button" class="h2h-subtab-btn" data-h2h-subtab="streak" aria-current="false">Streak Survivor</button>
+      </div>
+
+      <div class="h2h-subpanel active" data-h2h-subpanel="outscore">
+        <div class="yardline" data-label="Outscore Their Guy"></div>
+        <div class="desc" style="margin-bottom:14px;">Pick a player off your roster to outscore a player off theirs. Fantasy points only, that week only.</div>
+        <div class="card bet-builder" id="prop-builder">
+          <div class="row2">
+            <div>
+              <label for="prop-team-a">Your Team</label>
+              <select id="prop-team-a"></select>
             </div>
-            <div class="row2">
-              <div>
-                <label for="prop-team-b">Challenge</label>
-                <select id="prop-team-b"></select>
-              </div>
-              <div>
-                <label for="prop-player-b">Their Player</label>
-                <div class="ac-wrap"><input type="text" id="prop-player-b" placeholder="e.g. Justin Jefferson" autocomplete="off"><div class="ac-menu" hidden></div></div>
-              </div>
-            </div>
-            <div class="bet-actions">
-              <button class="btn" type="button" id="prop-place">Add to Slip</button>
-              <div class="form-status" id="prop-status"></div>
+            <div>
+              <label for="prop-player-a">Your Player</label>
+              <div class="ac-wrap"><input type="text" id="prop-player-a" placeholder="e.g. Puka Nacua" autocomplete="off"><div class="ac-menu" hidden></div></div>
             </div>
           </div>
-        </div>
-
-        <div>
-          <div class="yardline" data-label="TD Parlay Duel"></div>
-          <div class="desc" style="margin-bottom:14px;">Stack 2&ndash;4 players you think all find the end zone this week, then challenge a friend who thinks at least one whiffs. All legs hit, you win the stake &mdash; anyone misses, they do.</div>
-          <div class="card bet-builder" id="parlay-builder">
-            <div class="row2">
-              <div>
-                <label for="parlay-team-a">Your Team</label>
-                <select id="parlay-team-a"></select>
-              </div>
-              <div>
-                <label for="parlay-team-b">Challenge</label>
-                <select id="parlay-team-b"></select>
-              </div>
+          <div class="row2">
+            <div>
+              <label for="prop-team-b">Challenge</label>
+              <select id="prop-team-b"></select>
             </div>
-            <div id="parlay-legs">
-              <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
-              <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
+            <div>
+              <label for="prop-player-b">Their Player</label>
+              <div class="ac-wrap"><input type="text" id="prop-player-b" placeholder="e.g. Justin Jefferson" autocomplete="off"><div class="ac-menu" hidden></div></div>
             </div>
-            <div class="bet-actions">
-              <button class="btn ghost" id="parlay-add-leg" type="button">+ Add Leg</button>
-              <div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-dim);" id="parlay-multiplier"></div>
-            </div>
-            <div class="bet-actions">
-              <button class="btn" type="button" id="parlay-place">Add to Slip</button>
-              <div class="form-status" id="parlay-status"></div>
-            </div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="prop-place">Add to Slip</button>
+            <div class="form-status" id="prop-status"></div>
           </div>
         </div>
       </div>
 
-      <div class="yardline" data-label="More Ways To Challenge"></div>
-      <div class="props-parlay-grid">
-        <div>
-          <div class="yardline" data-label="Full Slate Shootout"></div>
-          <div class="desc" style="margin-bottom:14px;">Skip your actual matchup &mdash; challenge any manager in the league to a side bet on total team score this week, opponent be damned.</div>
-          <div class="card bet-builder" id="shootout-builder">
-            <div class="row2">
-              <div>
-                <label for="shootout-team-a">Your Team</label>
-                <select id="shootout-team-a"></select>
-              </div>
-              <div>
-                <label for="shootout-team-b">Challenge</label>
-                <select id="shootout-team-b"></select>
-              </div>
+      <div class="h2h-subpanel" data-h2h-subpanel="parlay">
+        <div class="yardline" data-label="TD Parlay Duel"></div>
+        <div class="desc" style="margin-bottom:14px;">Stack 2&ndash;4 players you think all find the end zone this week, then challenge a friend who thinks at least one whiffs. All legs hit, you win the stake &mdash; anyone misses, they do.</div>
+        <div class="card bet-builder" id="parlay-builder">
+          <div class="row2">
+            <div>
+              <label for="parlay-team-a">Your Team</label>
+              <select id="parlay-team-a"></select>
             </div>
-            <div class="bet-actions">
-              <button class="btn" type="button" id="shootout-place">Add to Slip</button>
-              <div class="form-status" id="shootout-status"></div>
+            <div>
+              <label for="parlay-team-b">Challenge</label>
+              <select id="parlay-team-b"></select>
             </div>
           </div>
-        </div>
-
-        <div>
-          <div class="yardline" data-label="Position Duel"></div>
-          <div class="desc" style="margin-bottom:14px;">RB1 vs. RB1, WR2 vs. WR2 &mdash; pick a roster slot and let two guys at the same position settle it.</div>
-          <div class="card bet-builder" id="duel-builder">
-            <div class="row2">
-              <div>
-                <label for="duel-position">Position</label>
-                <select id="duel-position">
-                  <option value="QB">QB</option>
-                  <option value="RB">RB</option>
-                  <option value="WR">WR</option>
-                  <option value="TE">TE</option>
-                  <option value="FLEX">FLEX</option>
-                  <option value="K">K</option>
-                  <option value="D/ST">D/ST</option>
-                </select>
-              </div>
-            </div>
-            <div class="row2">
-              <div>
-                <label for="duel-team-a">Your Team</label>
-                <select id="duel-team-a"></select>
-              </div>
-              <div>
-                <label for="duel-player-a">Your Player</label>
-                <div class="ac-wrap"><input type="text" id="duel-player-a" placeholder="e.g. your RB1" autocomplete="off"><div class="ac-menu" hidden></div></div>
-              </div>
-            </div>
-            <div class="row2">
-              <div>
-                <label for="duel-team-b">Challenge</label>
-                <select id="duel-team-b"></select>
-              </div>
-              <div>
-                <label for="duel-player-b">Their Player</label>
-                <div class="ac-wrap"><input type="text" id="duel-player-b" placeholder="e.g. their RB1" autocomplete="off"><div class="ac-menu" hidden></div></div>
-              </div>
-            </div>
-            <div class="bet-actions">
-              <button class="btn" type="button" id="duel-place">Add to Slip</button>
-              <div class="form-status" id="duel-status"></div>
-            </div>
+          <div id="parlay-legs">
+            <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
+            <div class="parlay-leg"><div class="ac-wrap"><input type="text" placeholder="Player (Team)" class="parlay-player" autocomplete="off"><div class="ac-menu" hidden></div></div><button class="btn ghost remove-leg" type="button" disabled>&times;</button></div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn ghost" id="parlay-add-leg" type="button">+ Add Leg</button>
+            <div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-dim);" id="parlay-multiplier"></div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="parlay-place">Add to Slip</button>
+            <div class="form-status" id="parlay-status"></div>
           </div>
         </div>
+      </div>
 
-        <div>
-          <div class="yardline" data-label="Streak Survivor"></div>
-          <div class="desc" style="margin-bottom:14px;">Higher score wins the week. Lose, and you can run it back next week at double &mdash; double or nothing, until someone folds.</div>
-          <div class="card bet-builder" id="streak-builder">
-            <div class="row2">
-              <div>
-                <label for="streak-team-a">Your Team</label>
-                <select id="streak-team-a"></select>
-              </div>
-              <div>
-                <label for="streak-team-b">Challenge</label>
-                <select id="streak-team-b"></select>
-              </div>
+      <div class="h2h-subpanel" data-h2h-subpanel="shootout">
+        <div class="yardline" data-label="Full Slate Shootout"></div>
+        <div class="desc" style="margin-bottom:14px;">Skip your actual matchup &mdash; challenge any manager in the league to a side bet on total team score this week, opponent be damned.</div>
+        <div class="card bet-builder" id="shootout-builder">
+          <div class="row2">
+            <div>
+              <label for="shootout-team-a">Your Team</label>
+              <select id="shootout-team-a"></select>
             </div>
-            <div class="bet-actions">
-              <button class="btn" type="button" id="streak-place">Add to Slip</button>
-              <div class="form-status" id="streak-status"></div>
+            <div>
+              <label for="shootout-team-b">Challenge</label>
+              <select id="shootout-team-b"></select>
             </div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="shootout-place">Add to Slip</button>
+            <div class="form-status" id="shootout-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="h2h-subpanel" data-h2h-subpanel="duel">
+        <div class="yardline" data-label="Position Duel"></div>
+        <div class="desc" style="margin-bottom:14px;">RB1 vs. RB1, WR2 vs. WR2 &mdash; pick a roster slot and let two guys at the same position settle it.</div>
+        <div class="card bet-builder" id="duel-builder">
+          <div class="row2">
+            <div>
+              <label for="duel-position">Position</label>
+              <select id="duel-position">
+                <option value="QB">QB</option>
+                <option value="RB">RB</option>
+                <option value="WR">WR</option>
+                <option value="TE">TE</option>
+                <option value="FLEX">FLEX</option>
+                <option value="K">K</option>
+                <option value="D/ST">D/ST</option>
+              </select>
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label for="duel-team-a">Your Team</label>
+              <select id="duel-team-a"></select>
+            </div>
+            <div>
+              <label for="duel-player-a">Your Player</label>
+              <div class="ac-wrap"><input type="text" id="duel-player-a" placeholder="e.g. your RB1" autocomplete="off"><div class="ac-menu" hidden></div></div>
+            </div>
+          </div>
+          <div class="row2">
+            <div>
+              <label for="duel-team-b">Challenge</label>
+              <select id="duel-team-b"></select>
+            </div>
+            <div>
+              <label for="duel-player-b">Their Player</label>
+              <div class="ac-wrap"><input type="text" id="duel-player-b" placeholder="e.g. their RB1" autocomplete="off"><div class="ac-menu" hidden></div></div>
+            </div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="duel-place">Add to Slip</button>
+            <div class="form-status" id="duel-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="h2h-subpanel" data-h2h-subpanel="streak">
+        <div class="yardline" data-label="Streak Survivor"></div>
+        <div class="desc" style="margin-bottom:14px;">Higher score wins the week. Lose, and you can run it back next week at double &mdash; double or nothing, until someone folds.</div>
+        <div class="card bet-builder" id="streak-builder">
+          <div class="row2">
+            <div>
+              <label for="streak-team-a">Your Team</label>
+              <select id="streak-team-a"></select>
+            </div>
+            <div>
+              <label for="streak-team-b">Challenge</label>
+              <select id="streak-team-b"></select>
+            </div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="streak-place">Add to Slip</button>
+            <div class="form-status" id="streak-status"></div>
           </div>
         </div>
       </div>
@@ -1360,11 +1465,26 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
 
     <div class="pickem-panel" data-pickem-panel="mybets">
       <div class="yardline" data-label="Challenges Awaiting You"></div>
-      <div class="desc" style="margin-bottom:14px;">H2H challenges a friend sent you. Accept to lock in the stake on both sides, decline to pass &mdash; nothing moves until you answer.</div>
+      <div class="desc" style="margin-bottom:14px;">H2H challenges a friend sent you. Accept to lock in the stake on both sides, decline to pass &mdash; nothing moves until you answer. These always show first.</div>
       <div id="incoming-challenges-list"></div>
 
-      <div class="yardline" data-label="My Wagers"></div>
+      <div class="yardline" data-label="My Wagers" style="margin-top:30px;"></div>
       <div class="desc" style="margin-bottom:14px;">Every bet you've staked, against the book or a friend, open or settled. Balances update automatically once a week's final.</div>
+
+      <div class="mybets-cat-tabs" role="tablist" aria-label="My Bets categories">
+        <button type="button" class="mybets-cat-btn" data-mybets-cat="challenges" aria-current="true">Challenges</button>
+        <button type="button" class="mybets-cat-btn" data-mybets-cat="league" aria-current="false">League Bets</button>
+        <button type="button" class="mybets-cat-btn" data-mybets-cat="nfl" aria-current="false">NFL Lines</button>
+        <button type="button" class="mybets-cat-btn" data-mybets-cat="futures" aria-current="false">Futures</button>
+      </div>
+      <div class="mybets-status-tabs" role="tablist" aria-label="Filter My Wagers by status">
+        <button type="button" class="mybets-status-btn" data-mybets-status="all" aria-current="true">All</button>
+        <button type="button" class="mybets-status-btn" data-mybets-status="open" aria-current="false">Open</button>
+        <button type="button" class="mybets-status-btn" data-mybets-status="settled" aria-current="false">Settled</button>
+        <button type="button" class="mybets-status-btn" data-mybets-status="won" aria-current="false">Won</button>
+        <button type="button" class="mybets-status-btn" data-mybets-status="lost" aria-current="false">Lost</button>
+      </div>
+
       <div id="build-your-bets-list"></div>
     </div>
 
@@ -1467,8 +1587,9 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
     <div class="news-compose" id="news-compose-wrap">
       <div class="news-compose-head">
         <div class="news-avatar" id="news-compose-avatar">?</div>
-        <textarea id="news-compose-body" placeholder="What happened this week?" maxlength="280"></textarea>
+        <textarea id="news-compose-body" placeholder="What happened this week? Type @ to mention a team." maxlength="280"></textarea>
       </div>
+      <div class="ac-menu" id="news-mention-menu" hidden></div>
       <div class="news-compose-foot">
         <span class="news-compose-count" id="news-compose-count">280</span>
         <button class="btn" type="button" id="news-compose-submit">Post</button>
@@ -1687,7 +1808,7 @@ function showView(view) {
   if (view === 'teams') renderTeamsGrid();
   if (view === 'team') renderTeamDetail(activeTeamId);
   if (view === 'records') { renderRecords(); renderStandings(); }
-  if (view === 'recaps') { renderRecaps(); renderNewsFeed(); }
+  if (view === 'recaps') { renderRecaps(); renderNewsFeed(); markMentionsSeen(); }
   maybeShowAcceptModal();
   if (!pendingHighlightId) window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
 }
@@ -2739,6 +2860,56 @@ async function placeSlip() {
   }
 }
 
+// Which My Bets category tab a bet falls under. The peer-challenge types in
+// H2H_BET_TYPES (with an actual opponent set) are "Challenges"; futures-style
+// season-long markets (including Trade Deadline Chaos, which lives on the
+// Futures tab) are "Futures"; real NFL games/props are "NFL Lines"; everything
+// else (Catdome Game Lines, Waiver Wire Wizard, book combo parlays) falls
+// back to "League Bets".
+function betCategoryOf(b) {
+  if (b.type === 'futures' || b.type === 'trade') return 'futures';
+  if (b.type === 'nfl' || b.type === 'nfl_prop') return 'nfl';
+  if (H2H_BET_TYPES.includes(b.type) && b.teamB) return 'challenges';
+  return 'league';
+}
+
+// Best-effort leg labels for a parlay's progress dots, parsed from the
+// numbered lines already baked into the bet's text at placement time (there's
+// no separate structured leg-by-leg grading yet -- see parlayProgressHtml).
+function parlayLegLabels(b) {
+  if (!b || !b.text) return [];
+  const matches = [...String(b.text).matchAll(/^\s*\d+\.\s*(.+)$/gm)];
+  return matches.map(m => m[1].replace(/\s*[—-]\s*Anytime TD\s*$/i, '').trim()).filter(Boolean).slice(0, 6);
+}
+
+// Parlay leg progress: green dot = leg hit, red = leg missed, hollow = still
+// open. The book currently grades a parlay as a whole (settleBetManually),
+// not leg-by-leg, so an open parlay shows every leg hollow and a settled one
+// shows every leg matching the overall result -- honest given the data on
+// hand today, and the visual slot is ready for real per-leg grading later.
+function parlayProgressHtml(b) {
+  if (b.type !== 'parlay') return '';
+  const legs = parlayLegLabels(b);
+  if (legs.length < 2) return '';
+  const state = b.status === 'settled' ? (b.result === 'win' ? 'hit' : b.result === 'push' ? 'open' : 'miss') : 'open';
+  const dots = legs.map(label => `<span class="parlay-dot ${state}" title="${escapeHtml(label)}"></span>`).join('');
+  return `<div class="parlay-progress">${dots}<span class="parlay-progress-legend">${legs.length}-leg parlay</span></div>`;
+}
+
+function betWinBannerHtml(b) {
+  if (b.status !== 'settled' || b.result !== 'win') return '';
+  const payout = (b.potentialPayout ?? b.stake) - (b.stake || 0);
+  return `<div class="bet-win-banner"><span class="trophy">&#127942;</span><span>Winner! +${cp(payout)}</span></div>`;
+}
+
+const MYBETS_STATUS_FILTERS = {
+  all: () => true,
+  open: b => b.status === 'open' || b.status === 'pending',
+  settled: b => b.status === 'settled',
+  won: b => b.status === 'settled' && b.result === 'win',
+  lost: b => b.status === 'settled' && b.result === 'loss',
+};
+
 function renderMyWagers() {
   const wrap = document.getElementById('build-your-bets-list');
   if (!wrap) return;
@@ -2746,14 +2917,20 @@ function renderMyWagers() {
     wrap.innerHTML = '<div class="recap-empty">Sign in and pick your team to see your wager history.</div>';
     return;
   }
-  const mine = (LEAGUE_DATA.bets || [])
+  const all = (LEAGUE_DATA.bets || [])
     // Streak Survivor is included from the teamB side too -- both managers in a
     // running streak need to see it here to run it back, not just whoever
     // originally sent the challenge.
     .filter(b => b.placedBy === currentActingTeamId || (b.type === 'streak' && b.teamB === currentActingTeamId))
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || String(b.id).localeCompare(String(a.id)));
-  if (!mine.length) {
+  if (!all.length) {
     wrap.innerHTML = '<div class="recap-empty">No wagers yet &mdash; build a slip above and place your first bet.</div>';
+    return;
+  }
+  const statusFilter = MYBETS_STATUS_FILTERS[myBetsStatus] || MYBETS_STATUS_FILTERS.all;
+  const mine = all.filter(b => betCategoryOf(b) === myBetsCategory && statusFilter(b));
+  if (!mine.length) {
+    wrap.innerHTML = '<div class="recap-empty">Nothing here yet for this tab.</div>';
     return;
   }
   wrap.innerHTML = mine.map(b => {
@@ -2788,6 +2965,8 @@ function renderMyWagers() {
       <div class="bet-ledger-summary">${b.summary}</div>
       ${stakeHtml}
       ${resultHtml}
+      ${parlayProgressHtml(b)}
+      ${betWinBannerHtml(b)}
       ${sendHtml}
       ${rematchHtml}
     </div>`;
@@ -2955,9 +3134,20 @@ if (acceptChallengeDismissBtn) acceptChallengeDismissBtn.addEventListener('click
 // Bet data now surfaces in two places -- the working list on the Sportsbook page
 // and each team's Betting Log -- so any mutation needs to refresh whichever of
 // those is actually on screen.
+// Red dot on the My Bets tab whenever a friend has sent a challenge you
+// haven't answered yet -- same pending/H2H filter as renderIncomingChallenges.
+function updateMyBetsAlertDot() {
+  const dot = document.getElementById('mybets-alert-dot');
+  if (!dot) return;
+  const hasIncoming = !!currentActingTeamId && (LEAGUE_DATA.bets || [])
+    .some(b => b.status === 'pending' && b.teamB === currentActingTeamId && H2H_BET_TYPES.includes(b.type));
+  dot.hidden = !hasIncoming;
+}
+
 function refreshBetViews() {
   renderMyWagers();
   renderIncomingChallenges();
+  updateMyBetsAlertDot();
   if (isAdmin()) renderAdminPanel();
   const teamView = document.getElementById('view-team');
   if (teamView && teamView.classList.contains('active') && activeTeamId) {
@@ -4091,6 +4281,54 @@ if (laSubtabBar) laSubtabBar.addEventListener('click', e => {
   document.querySelectorAll('.la-subpanel').forEach(p => p.classList.toggle('active', p.dataset.laSubpanel === tab));
 });
 
+// Futures sub-tabs: Champion / Top 3 / Toilet Bowl / Waiver Wire King / Trade
+// Deadline Chaos -- click the market title instead of scrolling past every
+// board. Same pattern as the NFL/League Action sub-tabs above.
+const futuresSubtabBar = document.querySelector('.futures-subtabs');
+if (futuresSubtabBar) futuresSubtabBar.addEventListener('click', e => {
+  const tabBtn = e.target.closest('[data-futures-subtab]');
+  if (!tabBtn) return;
+  const tab = tabBtn.dataset.futuresSubtab;
+  futuresSubtabBar.querySelectorAll('[data-futures-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
+  document.querySelectorAll('.futures-subpanel').forEach(p => p.classList.toggle('active', p.dataset.futuresSubpanel === tab));
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+});
+
+// H2H Challenge sub-tabs: one bet type per tab instead of a long scroll --
+// Outscore Their Guy / TD Parlay Duel / Full Slate Shootout / Position Duel /
+// Streak Survivor. Same pattern as the sub-tab groups above.
+const h2hSubtabBar = document.querySelector('.h2h-subtabs');
+if (h2hSubtabBar) h2hSubtabBar.addEventListener('click', e => {
+  const tabBtn = e.target.closest('[data-h2h-subtab]');
+  if (!tabBtn) return;
+  const tab = tabBtn.dataset.h2hSubtab;
+  h2hSubtabBar.querySelectorAll('[data-h2h-subtab]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
+  document.querySelectorAll('.h2h-subpanel').forEach(p => p.classList.toggle('active', p.dataset.h2hSubpanel === tab));
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+});
+
+// My Bets: category tabs (Challenges / League Bets / NFL Lines / Futures) plus
+// a DraftKings-style status filter (All / Open / Settled / Won / Lost). Both
+// just re-render the same list through renderMyWagers()'s filter.
+let myBetsCategory = 'challenges';
+let myBetsStatus = 'all';
+const myBetsCatBar = document.querySelector('.mybets-cat-tabs');
+if (myBetsCatBar) myBetsCatBar.addEventListener('click', e => {
+  const tabBtn = e.target.closest('[data-mybets-cat]');
+  if (!tabBtn) return;
+  myBetsCategory = tabBtn.dataset.mybetsCat;
+  myBetsCatBar.querySelectorAll('[data-mybets-cat]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
+  renderMyWagers();
+});
+const myBetsStatusBar = document.querySelector('.mybets-status-tabs');
+if (myBetsStatusBar) myBetsStatusBar.addEventListener('click', e => {
+  const tabBtn = e.target.closest('[data-mybets-status]');
+  if (!tabBtn) return;
+  myBetsStatus = tabBtn.dataset.mybetsStatus;
+  myBetsStatusBar.querySelectorAll('[data-mybets-status]').forEach(b => b.setAttribute('aria-current', b === tabBtn ? 'true' : 'false'));
+  renderMyWagers();
+});
+
 // League Action fantasy props: TD Scorers / Passing / Receiving / Running for this
 // week's 5 fantasy matchups. Pre-draft there's no roster data to grade against, so
 // every category renders a "not yet" empty state -- but the toggle/render plumbing
@@ -4862,6 +5100,119 @@ const NEWS_CATEGORY_LABELS = {
   bet_result: 'Bet Result', waiver: 'Waiver Wire', trade: 'Trade', game_result: 'Game Result', general: 'League Chatter',
 };
 
+// ---- @mentions: handles are team names, slugified (no auth/identity system
+// beyond currentActingTeamId to hang a real @username off of). "Seen" state
+// for the News tab's red dot lives in localStorage per acting team -- there's
+// no per-user read-state column on `profiles` yet, so this is per-browser,
+// not synced across devices for the same team. ----
+function slugifyTeamName(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+function teamHandle(teamId) {
+  const t = COMPUTED.teamById[teamId];
+  return t ? '@' + slugifyTeamName(t.name) : '';
+}
+function buildTeamHandleMap() {
+  const map = new Map();
+  activeTeams().forEach(t => { const slug = slugifyTeamName(t.name); if (slug) map.set(slug, t.id); });
+  return map;
+}
+function isMentionOf(post, teamId) {
+  if (!teamId || !post || !post.body) return false;
+  const handle = teamHandle(teamId);
+  if (!handle || handle.length < 2) return false;
+  return post.body.toLowerCase().includes(handle.toLowerCase());
+}
+function mentionSeenKey() { return `catdome_mentions_seen_${currentActingTeamId || 'anon'}`; }
+function getLastSeenMentionTime() {
+  try { return localStorage.getItem(mentionSeenKey()) || ''; } catch (e) { return ''; }
+}
+function markMentionsSeen() {
+  try { localStorage.setItem(mentionSeenKey(), new Date().toISOString()); } catch (e) {}
+  updateNewsAlertDot();
+}
+function updateNewsAlertDot() {
+  const dot = document.getElementById('news-nav-alert-dot');
+  if (!dot) return;
+  if (!currentActingTeamId) { dot.hidden = true; return; }
+  const lastSeen = getLastSeenMentionTime();
+  const mentioned = (LEAGUE_DATA.news || []).some(p => isMentionOf(p, currentActingTeamId) && (!lastSeen || (p.createdAt || '') > lastSeen));
+  dot.hidden = !mentioned;
+}
+// Turns "@teamslug" tokens in already-escaped news text into styled, clickable
+// mention spans -- reuses the same [data-nav="team"] delegated click handling
+// as every other team link on the site.
+function renderMentionText(body) {
+  const map = buildTeamHandleMap();
+  const escaped = escapeHtml(body);
+  return escaped.replace(/@([a-z0-9]+)/gi, (whole, slug) => {
+    const teamId = map.get(slug.toLowerCase());
+    if (!teamId) return whole;
+    return `<span class="mention" data-nav="team" data-team="${teamId}">@${escapeHtml(teamName(teamId))}</span>`;
+  });
+}
+// @ mention autocomplete for the News compose box -- same interaction shape as
+// attachPlayerAutocomplete (arrow keys, Enter, click), reusing the existing
+// .ac-menu/.ac-item styles. Selecting a team inserts its slug handle so the
+// stored post body already contains the exact token renderMentionText/
+// isMentionOf match against.
+function attachMentionAutocomplete(textarea, menu) {
+  if (!textarea || !menu) return;
+  let items = [];
+  let activeIndex = -1;
+  let mentionStart = -1;
+
+  function currentMentionQuery() {
+    const pos = textarea.selectionStart;
+    const before = textarea.value.slice(0, pos);
+    const m = before.match(/(^|\s)@([a-zA-Z0-9]*)$/);
+    if (!m) return null;
+    mentionStart = pos - m[2].length - 1;
+    return m[2];
+  }
+  function render() {
+    menu.innerHTML = items.map((t, i) =>
+      `<div class="ac-item${i === activeIndex ? ' active' : ''}" data-idx="${i}"><span>${escapeHtml(t.name)}</span><span class="ac-meta">@${slugifyTeamName(t.name)}</span></div>`
+    ).join('');
+    menu.hidden = items.length === 0;
+  }
+  function close() { items = []; activeIndex = -1; menu.hidden = true; mentionStart = -1; }
+  function choose(t) {
+    const pos = textarea.selectionStart;
+    const before = textarea.value.slice(0, mentionStart);
+    const after = textarea.value.slice(pos);
+    const insert = '@' + slugifyTeamName(t.name) + ' ';
+    textarea.value = before + insert + after;
+    const newPos = (before + insert).length;
+    textarea.setSelectionRange(newPos, newPos);
+    close();
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    textarea.focus();
+  }
+  textarea.addEventListener('input', () => {
+    const q = currentMentionQuery();
+    if (q === null) { close(); return; }
+    const ql = q.toLowerCase();
+    items = activeTeams().filter(t => slugifyTeamName(t.name).includes(ql) || t.name.toLowerCase().includes(ql)).slice(0, 6);
+    activeIndex = -1;
+    render();
+  });
+  textarea.addEventListener('keydown', e => {
+    if (menu.hidden) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIndex = Math.min(activeIndex + 1, items.length - 1); render(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIndex = Math.max(activeIndex - 1, 0); render(); }
+    else if (e.key === 'Enter') { if (activeIndex >= 0) { e.preventDefault(); choose(items[activeIndex]); } }
+    else if (e.key === 'Escape') { close(); }
+  });
+  menu.addEventListener('mousedown', e => {
+    const item = e.target.closest('.ac-item');
+    if (!item) return;
+    e.preventDefault();
+    choose(items[Number(item.dataset.idx)]);
+  });
+  textarea.addEventListener('blur', () => setTimeout(close, 150));
+}
+
 function mapNewsRow(row) {
   return {
     id: row.id, category: row.category || 'general', teamId: row.team_id || null,
@@ -4897,16 +5248,30 @@ function subscribeNewsPosts() {
 function renderNewsFeed() {
   const wrap = document.getElementById('news-feed-list');
   if (!wrap) return;
-  const posts = LEAGUE_DATA.news || [];
-  if (!posts.length) { wrap.innerHTML = '<div class="news-empty">No news yet &mdash; bet results, waiver moves, and trades will post here automatically. Or just say something below.</div>'; return; }
+  updateNewsAlertDot();
+  const all = LEAGUE_DATA.news || [];
+  if (!all.length) { wrap.innerHTML = '<div class="news-empty">No news yet &mdash; bet results, waiver moves, and trades will post here automatically. Or just say something below.</div>'; return; }
+  // Unseen @mentions of the acting team float to the top of the feed --
+  // once the News tab is visited, markMentionsSeen() clears the flag and
+  // these fall back into normal chronological order on the next render.
+  const lastSeen = getLastSeenMentionTime();
+  const pinned = [], rest = [];
+  all.forEach(p => {
+    const isPin = currentActingTeamId && isMentionOf(p, currentActingTeamId) && (!lastSeen || (p.createdAt || '') > lastSeen);
+    (isPin ? pinned : rest).push(p);
+  });
+  const posts = [...pinned, ...rest];
   wrap.innerHTML = posts.map(p => {
     const name = p.teamId ? teamName(p.teamId) : (p.author || 'Catdome Cup');
-    const handle = p.teamId ? `@${p.teamId.toLowerCase()}` : '@catdomecup';
+    const handle = p.teamId ? teamHandle(p.teamId) : '@catdomecup';
     const heatClass = p.heat > 0 ? 'mine' : '';
+    const isPinned = pinned.includes(p);
+    const mentionTag = isPinned ? '<div class="news-mention-tag">&#128276; You were mentioned</div>' : '';
     return `
-    <div class="news-post" data-news-id="${p.id}">
+    <div class="news-post${isPinned ? ' mention-pinned' : ''}" data-news-id="${p.id}">
       ${teamAvatarHtml(p.teamId, name)}
       <div class="news-post-body-wrap">
+        ${mentionTag}
         <div class="news-post-head">
           <span class="news-post-name">${escapeHtml(name)}</span>
           <span class="news-post-handle">${handle}</span>
@@ -4914,7 +5279,7 @@ function renderNewsFeed() {
           <span class="news-post-time">${newsRelativeTime(p.createdAt)}</span>
           <span class="news-post-cat">${NEWS_CATEGORY_LABELS[p.category] || 'League Chatter'}</span>
         </div>
-        <div class="news-post-text">${escapeHtml(p.body)}</div>
+        <div class="news-post-text">${renderMentionText(p.body)}</div>
         <div class="news-post-foot">
           <button class="news-heat-btn ${heatClass}" type="button" data-heat="${p.id}">&#128293; ${p.heat || ''}</button>
         </div>
@@ -4958,6 +5323,7 @@ const newsComposeCount = document.getElementById('news-compose-count');
 if (newsComposeBody) newsComposeBody.addEventListener('input', () => {
   if (newsComposeCount) newsComposeCount.textContent = String(280 - newsComposeBody.value.length);
 });
+attachMentionAutocomplete(newsComposeBody, document.getElementById('news-mention-menu'));
 const newsComposeSubmit = document.getElementById('news-compose-submit');
 if (newsComposeSubmit) newsComposeSubmit.addEventListener('click', async () => {
   const statusEl = document.getElementById('news-compose-status');
