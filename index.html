@@ -5405,7 +5405,7 @@ function renderNewsFeed() {
     // status flips off 'open' and this button quietly stops appearing here
     // too, no separate bookkeeping on the post needed.
     const tailBetRef = p.betId ? (LEAGUE_DATA.bets || []).find(b => b.id === p.betId) : null;
-    const tailHtml = (tailBetRef && tailBetRef.status === 'open' && H2H_BET_TYPES.includes(tailBetRef.type))
+    const tailHtml = (tailBetRef && tailBetRef.status === 'open' && tailBetRef.teamA && tailBetRef.teamB && H2H_BET_TYPES.includes(tailBetRef.type))
       ? `<button class="btn ghost news-tail-btn" type="button" data-tail-bet="${tailBetRef.id}">Tail This Bet</button>`
       : '';
     return `
