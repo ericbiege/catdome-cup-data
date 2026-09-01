@@ -681,9 +681,17 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .prop-player-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
 .prop-player-row:first-of-type { border-top: none; }
 .prop-player-name { font-family: var(--font-body); font-weight: 700; font-size: 13px; color: var(--ink); flex: 1 1 120px; min-width: 0; }
-.prop-chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.prop-chip-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .prop-chip { min-width: 60px; width: auto; padding: 6px 10px; }
 .prop-empty { font-size: 13px; color: var(--ink-dim); padding: 14px 0; }
+.ladder-page-btn {
+  display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+  width: 26px; height: 26px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--paper-sunken); color: var(--ink); font-size: 15px; line-height: 1; cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.ladder-page-btn:hover:not(:disabled) { border-color: var(--gold); color: var(--gold-strong); }
+.ladder-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .props-parlay-grid { display: grid; gap: 24px; }
 @media (min-width: 900px) {
@@ -4815,6 +4823,17 @@ const PROP_WRAP_IDS = {
   td: 'nfl-props-td-list', passing: 'nfl-props-passing-list', receiving: 'nfl-props-receiving-list',
   rushing: 'nfl-props-rushing-list', defense: 'nfl-props-defense-list',
 };
+const WRAP_ID_TO_CATEGORY = Object.fromEntries(Object.entries(PROP_WRAP_IDS).map(([cat, id]) => [id, cat]));
+
+// Ladder markets (pass_yds, rush_yds, reception_yds, receptions, etc.) sync
+// as a whole run of alternate-line thresholds -- e.g. pass yards might have
+// 15+ synced lines from 149.5 all the way to 429.5. Rather than always
+// showing the 3 cheapest (nearly-guaranteed, heavily-favored-odds) lines,
+// this remembers a 3-line "window" per player+market that starts near the
+// fairest-priced line and can be paged up/down. In-memory only (resets on
+// page reload) since it's just a viewing convenience, not bet state.
+const propLadderOffset = new Map();
+function ladderKey(eventId, market, player) { return `${eventId}::${market}::${player}`; }
 // Which prop-type button is active per category -- base market = single/ladder view, "_ou" suffix = Over/Under view.
 const NFL_PROP_VIEW = { td: 'anytime_td', passing: 'pass_yds', receiving: 'reception_yds', rushing: 'rush_yds', defense: 'sacks' };
 
@@ -4881,8 +4900,32 @@ function renderPropCategory(category) {
         const paired = [...byLine.values()].find(sides => sides.over && sides.under);
         if (paired) chips = propChipHtml(paired.over, `O ${paired.over.line}`, locked) + propChipHtml(paired.under, `U ${paired.under.line}`, locked);
       } else {
-        const overs = playerProps.filter(p => p.side === 'over').sort((a, b) => a.line - b.line).slice(0, 3);
-        chips = overs.map(p => propChipHtml(p, `${Math.ceil(p.line)}+`, locked)).join('');
+        const overs = playerProps.filter(p => p.side === 'over').sort((a, b) => a.line - b.line);
+        if (overs.length) {
+          const key = ladderKey(eventId, market, player);
+          if (!propLadderOffset.has(key)) {
+            // First time seeing this player+market: default the window to
+            // whichever line's price is closest to even odds (HOUSE_ODDS,
+            // -110), so users land near a real coin-flip instead of the
+            // cheapest (nearly-guaranteed) threshold at the bottom.
+            let bestIdx = 0, bestDist = Infinity;
+            overs.forEach((p, i) => {
+              const dist = Math.abs(Number(p.price) - HOUSE_ODDS);
+              if (dist < bestDist) { bestDist = dist; bestIdx = i; }
+            });
+            propLadderOffset.set(key, Math.max(0, Math.min(bestIdx, Math.max(0, overs.length - 3))));
+          }
+          const maxOffset = Math.max(0, overs.length - 3);
+          const offset = Math.max(0, Math.min(propLadderOffset.get(key), maxOffset));
+          propLadderOffset.set(key, offset);
+          const windowSize = Math.min(3, overs.length);
+          const shown = overs.slice(offset, offset + windowSize);
+          const canPrev = offset > 0;
+          const canNext = offset + windowSize < overs.length;
+          const prevBtn = `<button type="button" class="ladder-page-btn" data-ladder-key="${key}" data-ladder-dir="-1" ${canPrev ? '' : 'disabled'} aria-label="Lower lines">&lsaquo;</button>`;
+          const nextBtn = `<button type="button" class="ladder-page-btn" data-ladder-key="${key}" data-ladder-dir="1" ${canNext ? '' : 'disabled'} aria-label="Higher lines">&rsaquo;</button>`;
+          chips = prevBtn + shown.map(p => propChipHtml(p, `${Math.ceil(p.line)}+`, locked)).join('') + nextBtn;
+        }
       }
       if (!chips) return '';
       return `<div class="prop-player-row"><div class="prop-player-name">${player}</div><div class="prop-chip-row">${chips}</div></div>`;
@@ -4933,6 +4976,15 @@ Object.values(PROP_WRAP_IDS).forEach(id => {
   const wrap = document.getElementById(id);
   if (!wrap) return;
   wrap.addEventListener('click', e => {
+    const pageBtn = e.target.closest('.ladder-page-btn');
+    if (pageBtn) {
+      if (pageBtn.disabled) return;
+      const ladderOffsetKey = pageBtn.dataset.ladderKey;
+      const dir = Number(pageBtn.dataset.ladderDir);
+      propLadderOffset.set(ladderOffsetKey, (propLadderOffset.get(ladderOffsetKey) || 0) + dir);
+      renderPropCategory(WRAP_ID_TO_CATEGORY[id]);
+      return;
+    }
     const chip = e.target.closest('.prop-chip');
     if (!chip || chip.disabled) return;
     const item = propItemFromId(chip.dataset.propId);
