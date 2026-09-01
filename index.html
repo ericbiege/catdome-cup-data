@@ -1043,6 +1043,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <button type="button" class="la-subtab-btn" data-la-subtab="passing" aria-current="false">Passing</button>
         <button type="button" class="la-subtab-btn" data-la-subtab="receiving" aria-current="false">Receiving</button>
         <button type="button" class="la-subtab-btn" data-la-subtab="rushing" aria-current="false">Running</button>
+        <button type="button" class="la-subtab-btn" data-la-subtab="tail" aria-current="false">Tail Bets</button>
       </div>
 
       <div class="la-subpanel active" data-la-subpanel="lines">
@@ -1102,6 +1103,12 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div id="la-props-rushing-list" class="matchup-list"></div>
       </div>
 
+      <div class="la-subpanel" data-la-subpanel="tail">
+        <div class="yardline" data-label="Tail Bets"></div>
+        <div class="desc" style="margin-bottom:14px;">Every H2H Challenge currently live or awaiting a response, league-wide. See a matchup you like? Tail it &mdash; it loads the same picks into the builder so you can send the same challenge to whoever you want.</div>
+        <div id="tail-bets-list" class="matchup-list"></div>
+      </div>
+
       <div class="yardline" data-label="Waiver Wire Wizard"></div>
       <div class="desc" style="margin-bottom:14px;">Stake Catpoints on your free-agent pickup against theirs.</div>
       <div class="card bet-builder" id="waiver-builder">
@@ -1128,25 +1135,6 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div class="bet-actions">
           <button class="btn" type="button" id="waiver-place">Add to Slip</button>
           <div class="form-status" id="waiver-status"></div>
-        </div>
-      </div>
-
-      <div class="yardline" data-label="Bench Points Bowl"></div>
-      <div class="desc" style="margin-bottom:14px;">Stake Catpoints that your team strands FEWER points on the bench than theirs this week.</div>
-      <div class="card bet-builder" id="bench-builder">
-        <div class="row2">
-          <div>
-            <label for="bench-team-a">Your Team</label>
-            <select id="bench-team-a"></select>
-          </div>
-          <div>
-            <label for="bench-team-b">Their Team</label>
-            <select id="bench-team-b"></select>
-          </div>
-        </div>
-        <div class="bet-actions">
-          <button class="btn" type="button" id="bench-place">Add to Slip</button>
-          <div class="form-status" id="bench-status"></div>
         </div>
       </div>
 
@@ -1308,6 +1296,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <button type="button" class="h2h-subtab-btn" data-h2h-subtab="shootout" aria-current="false">Full Slate Shootout</button>
         <button type="button" class="h2h-subtab-btn" data-h2h-subtab="duel" aria-current="false">Position Duel</button>
         <button type="button" class="h2h-subtab-btn" data-h2h-subtab="streak" aria-current="false">Streak Survivor</button>
+        <button type="button" class="h2h-subtab-btn" data-h2h-subtab="bench" aria-current="false">Bench Points Bowl</button>
       </div>
 
       <div class="h2h-subpanel active" data-h2h-subpanel="outscore">
@@ -1453,6 +1442,27 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
           <div class="bet-actions">
             <button class="btn" type="button" id="streak-place">Add to Slip</button>
             <div class="form-status" id="streak-status"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="h2h-subpanel" data-h2h-subpanel="bench">
+        <div class="yardline" data-label="Bench Points Bowl"></div>
+        <div class="desc" style="margin-bottom:14px;">Stake Catpoints that your team strands FEWER points on the bench than theirs this week.</div>
+        <div class="card bet-builder" id="bench-builder">
+          <div class="row2">
+            <div>
+              <label for="bench-team-a">Your Team</label>
+              <select id="bench-team-a"></select>
+            </div>
+            <div>
+              <label for="bench-team-b">Their Team</label>
+              <select id="bench-team-b"></select>
+            </div>
+          </div>
+          <div class="bet-actions">
+            <button class="btn" type="button" id="bench-place">Add to Slip</button>
+            <div class="form-status" id="bench-status"></div>
           </div>
         </div>
       </div>
@@ -2772,9 +2782,20 @@ async function placeSlipParlay(statusEl) {
   const legSummaries = slip.map(i => i.summary.replace(/<[^>]+>/g, ''));
   const summary = `${slip.length}-leg Parlay &mdash; ${legSummaries.join(' + ')}`;
   const text = slip.map((i, idx) => `${idx + 1}. ${i.text}`).join('\n\n');
+  // Stash what kind of combo this is so My Bets can file it under the right tab
+  // (see betCategoryOf) -- a combo built entirely from NFL Game Lines/props
+  // belongs in "NFL Lines", not the "League Bets" catch-all it'd otherwise land
+  // in. Only set when every leg agrees; a mixed combo (NFL + a Catdome line,
+  // say) has no single right tab, so it stays in League Bets as before. This
+  // reuses the `market` column, which combo parlays never otherwise populate.
+  const legTypes = new Set(slip.map(i => i.type));
+  const comboCategory = [...legTypes].every(t => t === 'nfl' || t === 'nfl_prop') ? 'nfl'
+    : [...legTypes].every(t => t === 'futures' || t === 'trade') ? 'futures'
+    : null;
   const row = {
     id: betId, type: 'parlay', summary, bet_text: text, status: 'open',
     placed_by: currentActingTeamId, stake, odds: null, payout_multiplier: dec, potential_payout: payout,
+    market: comboCategory,
   };
   const { data, error } = await supabaseClient.from('bets').insert(row).select().single();
   if (error) {
@@ -2863,13 +2884,16 @@ async function placeSlip() {
 // Which My Bets category tab a bet falls under. The peer-challenge types in
 // H2H_BET_TYPES (with an actual opponent set) are "Challenges"; futures-style
 // season-long markets (including Trade Deadline Chaos, which lives on the
-// Futures tab) are "Futures"; real NFL games/props are "NFL Lines"; everything
-// else (Catdome Game Lines, Waiver Wire Wizard, book combo parlays) falls
-// back to "League Bets".
+// Futures tab) are "Futures"; real NFL games/props are "NFL Lines"; a book
+// combo parlay (type 'parlay', no teamB) built entirely from NFL legs or
+// entirely from futures legs inherits that tab too (see placeSlipParlay,
+// which stashes that in `market`); everything else (Catdome Game Lines,
+// Waiver Wire Wizard, mixed-leg combo parlays) falls back to "League Bets".
 function betCategoryOf(b) {
   if (b.type === 'futures' || b.type === 'trade') return 'futures';
   if (b.type === 'nfl' || b.type === 'nfl_prop') return 'nfl';
   if (H2H_BET_TYPES.includes(b.type) && b.teamB) return 'challenges';
+  if (b.type === 'parlay' && !b.teamB && (b.market === 'nfl' || b.market === 'futures')) return b.market;
   return 'league';
 }
 
@@ -2996,6 +3020,81 @@ function renderIncomingChallenges() {
       </div>
     </div>`).join('');
 }
+
+// ---- League Action: Tail Bets -- every H2H Challenge that's live or still
+// awaiting a response, league-wide (not just yours), so you can see what
+// challenges are out there and copy one (see tailBet below) instead of
+// building it from scratch.
+function renderTailBets() {
+  const wrap = document.getElementById('tail-bets-list');
+  if (!wrap) return;
+  const going = (LEAGUE_DATA.bets || [])
+    .filter(b => (b.status === 'open' || b.status === 'pending') && H2H_BET_TYPES.includes(b.type) && b.teamA && b.teamB)
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || String(b.id).localeCompare(String(a.id)));
+  if (!going.length) { wrap.innerHTML = '<div class="recap-empty">No H2H challenges are live in the league right now &mdash; check back once managers start throwing challenges down.</div>'; return; }
+  wrap.innerHTML = going.map(b => `
+    <div class="card bet-ledger-row" data-bet-id="${b.id}">
+      <div class="bet-ledger-top">
+        <span class="badge ${BET_STATUS_BADGE[b.status] || 'champ'}">${BET_STATUS_LABELS[b.status] || 'Open'}</span>
+        <span class="bet-ledger-date mono">${b.createdAt}</span>
+      </div>
+      <div class="bet-ledger-attrib">${teamName(b.placedBy)} vs ${teamName(b.teamB)}</div>
+      <div class="bet-ledger-summary">${b.summary}</div>
+      ${b.stake != null ? `<div class="bet-ledger-stake mono">${cp(b.stake)} a side &mdash; winner takes ${cp(b.stake * 2)}</div>` : ''}
+      <div class="h2h-actions">
+        <button class="btn ghost" type="button" data-tail-bet="${b.id}">Tail This Bet</button>
+      </div>
+    </div>`).join('');
+}
+
+// Loads a live/pending challenge's picks into the matching H2H builder so you
+// can send the same kind of bet to whoever you want -- it copies the picks
+// (players, position, parlay legs) but leaves Your Team/Challenge for you to
+// choose, since tailing means making the same bet, not joining theirs.
+const TAIL_SUBTAB_BY_TYPE = { prop: 'outscore', parlay: 'parlay', shootout: 'shootout', duel: 'duel', streak: 'streak', bench: 'bench' };
+function tailBet(betId) {
+  const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
+  const subtab = bet && TAIL_SUBTAB_BY_TYPE[bet.type];
+  if (!subtab) return;
+  setPickemTab('props');
+  const subtabBtn = document.querySelector(`.h2h-subtab-btn[data-h2h-subtab="${subtab}"]`);
+  if (subtabBtn) subtabBtn.click();
+  if (bet.type === 'prop') {
+    const pa = document.getElementById('prop-player-a'), pb = document.getElementById('prop-player-b');
+    if (pa) pa.value = bet.playerA || '';
+    if (pb) pb.value = bet.playerB || '';
+    updatePropPreview();
+  } else if (bet.type === 'duel') {
+    const pos = document.getElementById('duel-position'), pa = document.getElementById('duel-player-a'), pb = document.getElementById('duel-player-b');
+    if (pos && bet.market) pos.value = bet.market;
+    if (pa) pa.value = bet.playerA || '';
+    if (pb) pb.value = bet.playerB || '';
+    updateDuelPreview();
+  } else if (bet.type === 'parlay') {
+    const legs = parlayLegLabels(bet);
+    const addLegBtn = document.getElementById('parlay-add-leg');
+    while (document.querySelectorAll('#parlay-legs .parlay-leg').length < Math.min(legs.length, 4) && addLegBtn && !addLegBtn.disabled) {
+      addLegBtn.click();
+    }
+    document.querySelectorAll('#parlay-legs .parlay-player').forEach((input, i) => { if (legs[i]) input.value = legs[i]; });
+    updateParlayLegButtons();
+    updateParlayPreview();
+  } else if (bet.type === 'shootout' || bet.type === 'streak' || bet.type === 'bench') {
+    const teamBSel = document.getElementById(`${bet.type}-team-b`);
+    if (teamBSel && bet.teamB) teamBSel.value = bet.teamB;
+    if (bet.type === 'shootout') updateShootoutPreview();
+    if (bet.type === 'streak') updateStreakPreview();
+    if (bet.type === 'bench') updateBenchPreview();
+  }
+  const subtabBar = document.querySelector('.h2h-subtabs');
+  if (subtabBar && typeof subtabBar.scrollIntoView === 'function') subtabBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  showToast('Picks loaded — choose your matchup and add it to your slip.');
+}
+document.addEventListener('click', e => {
+  const tailBtn = e.target.closest('[data-tail-bet]');
+  if (!tailBtn) return;
+  tailBet(tailBtn.dataset.tailBet);
+});
 
 async function acceptChallenge(betId) {
   const bet = (LEAGUE_DATA.bets || []).find(b => b.id === betId);
@@ -3147,6 +3246,7 @@ function updateMyBetsAlertDot() {
 function refreshBetViews() {
   renderMyWagers();
   renderIncomingChallenges();
+  renderTailBets();
   updateMyBetsAlertDot();
   if (isAdmin()) renderAdminPanel();
   const teamView = document.getElementById('view-team');
@@ -3378,6 +3478,7 @@ function renderPickEm() {
   renderSlip();
   renderMyWagers();
   renderIncomingChallenges();
+  renderTailBets();
   renderFuturesBoard('futures-champion-board', 'champion');
   renderFuturesBoard('futures-top3-board', 'top3');
   renderFuturesBoard('futures-sacko-board', 'last');
