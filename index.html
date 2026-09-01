@@ -2554,18 +2554,18 @@ function renderH2HLeaderboard() {
   const wrap = document.getElementById('h2h-leaderboard');
   if (!wrap) return;
   const rows = computeH2HLeaderboard();
-  if (!rows.some(r => r.w > 0 || r.l > 0)) {
-    wrap.innerHTML = '<div class="recap-empty">No H2H challenges have settled yet this season &mdash; win one and climb the board.</div>';
-    return;
-  }
+  // Before anyone's settled a challenge every row ties at 0-0 -- still show
+  // the full board (so the feature isn't invisible on day one), just skip
+  // the top-3 gold tint and swap the note, since "top 3" means nothing yet.
+  const hasActivity = rows.some(r => r.w > 0 || r.l > 0);
   wrap.innerHTML = `
     <div class="card h2h-lb-card">
       <div class="h2h-lb-title-row">
         <div class="h2h-lb-title">Most Points Won</div>
-        <div class="h2h-lb-title-note">H2H Challenges &middot; season to date</div>
+        <div class="h2h-lb-title-note">${hasActivity ? 'H2H Challenges &middot; season to date' : 'No H2H challenges settled yet'}</div>
       </div>
       ${rows.map((r, i) => `
-        <div class="h2h-lb-row${i < 3 ? ' top3' : ''}">
+        <div class="h2h-lb-row${hasActivity && i < 3 ? ' top3' : ''}">
           <div class="h2h-lb-rank mono">${i + 1}</div>
           <div class="standings-monogram">${teamAvatarInnerHtml(r.id, r.name)}</div>
           <div class="h2h-lb-who">
