@@ -757,8 +757,28 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .idea-card { opacity: 0.85; }
 .idea-card h4 { font-size: 17px; margin: 5px 0 6px; }
 .idea-card .soon { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-strong); }
+
+/* ---------- H2H Challenge: most-points-won leaderboard ---------- */
+.h2h-lb-card { padding: 6px 18px 6px; }
+.h2h-lb-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 14px 0 12px; border-bottom: 1px solid var(--line); }
+.h2h-lb-title { font-family: var(--font-display); font-weight: 800; font-size: 18px; }
+.h2h-lb-title-note { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); }
+.h2h-lb-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.h2h-lb-row:last-child { border-bottom: none; }
+.h2h-lb-row.top3 { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 8%, transparent), transparent 45%); margin: 0 -18px; padding-left: 18px; padding-right: 18px; }
+.h2h-lb-rank { font-size: 13px; font-weight: 700; color: var(--ink-dim); width: 20px; flex-shrink: 0; }
+.h2h-lb-row.top3 .h2h-lb-rank { color: var(--gold-strong); }
+.h2h-lb-who { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.h2h-lb-name { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h2h-lb-owner { font-size: 11px; color: var(--ink-dim); flex-shrink: 0; }
+.h2h-lb-record {
+  flex-shrink: 0; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; color: var(--ink-dim);
+  background: var(--paper-sunken); border: 1px solid var(--line); padding: 2px 7px; border-radius: 100px;
+}
+.h2h-lb-bal { font-weight: 700; font-size: 15px; flex-shrink: 0; text-align: right; width: 76px; }
 @media (max-width: 640px) {
   .bet-builder .row2 { grid-template-columns: 1fr; }
+  .h2h-lb-owner { display: none; }
 }
 .form-status { font-family: var(--font-mono); font-size: 12px; margin-top: 10px; min-height: 16px; }
 .form-status.err { color: var(--crimson); }
@@ -1470,10 +1490,8 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
       </div>
 
-      <div class="yardline" data-label="More H2H Ideas"></div>
-      <div class="idea-grid">
-        <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Waiver Wire Duel</h4><div class="desc" style="font-size:13px;">Both of you name a free-agent pickup before waivers process. Whoever's guy scores more the rest of the season wins the stake.</div></div>
-      </div>
+      <div class="yardline" data-label="Most Points Won &middot; H2H Challenges"></div>
+      <div id="h2h-leaderboard"></div>
     </div>
 
     <div class="pickem-panel" data-pickem-panel="mybets">
@@ -2510,6 +2528,51 @@ const BET_STATUS_BADGE = { open: 'champ', settled: 'reg', pending: 'pending', de
 const H2H_BET_TYPES = ['prop', 'parlay', 'bench', 'shootout', 'duel', 'streak'];
 function isH2HItem(item) { return H2H_BET_TYPES.includes(item.type) && item.teamA && item.teamB; }
 
+// ---- H2H Challenge: most-points-won leaderboard --------------------------
+// "Points won" is net winnings, not the full payout -- a settled H2H bet pays
+// the winner stake*2 (their own stake back plus the loser's), so only the
+// stake itself (the loser's half) counts as something actually "won."
+function computeH2HLeaderboard() {
+  const totals = {};
+  (LEAGUE_DATA.teams || []).forEach(t => { totals[t.id] = { won: 0, w: 0, l: 0 }; });
+  (LEAGUE_DATA.bets || []).forEach(b => {
+    if (!isH2HItem(b) || b.status !== 'settled' || b.result === 'push' || !b.winnerTeamId) return;
+    const loserTeamId = b.winnerTeamId === b.teamA ? b.teamB : b.teamA;
+    if (totals[b.winnerTeamId]) { totals[b.winnerTeamId].won += Number(b.stake) || 0; totals[b.winnerTeamId].w += 1; }
+    if (totals[loserTeamId]) { totals[loserTeamId].l += 1; }
+  });
+  return (LEAGUE_DATA.teams || [])
+    .map(t => ({ id: t.id, name: t.name, owner: t.owner || 'Manager TBD', ...totals[t.id] }))
+    .sort((a, b) => b.won - a.won || b.w - a.w || a.name.localeCompare(b.name));
+}
+function renderH2HLeaderboard() {
+  const wrap = document.getElementById('h2h-leaderboard');
+  if (!wrap) return;
+  const rows = computeH2HLeaderboard();
+  if (!rows.some(r => r.w > 0 || r.l > 0)) {
+    wrap.innerHTML = '<div class="recap-empty">No H2H challenges have settled yet this season &mdash; win one and climb the board.</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="card h2h-lb-card">
+      <div class="h2h-lb-title-row">
+        <div class="h2h-lb-title">Most Points Won</div>
+        <div class="h2h-lb-title-note">H2H Challenges &middot; season to date</div>
+      </div>
+      ${rows.map((r, i) => `
+        <div class="h2h-lb-row${i < 3 ? ' top3' : ''}">
+          <div class="h2h-lb-rank mono">${i + 1}</div>
+          <div class="standings-monogram">${teamAvatarInnerHtml(r.id, r.name)}</div>
+          <div class="h2h-lb-who">
+            <div class="h2h-lb-name">${escapeHtml(r.name)}</div>
+            <div class="h2h-lb-owner mono">${escapeHtml(r.owner)}</div>
+          </div>
+          <div class="h2h-lb-record mono">${r.w}-${r.l}</div>
+          <div class="h2h-lb-bal mono">${cp(r.won)}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
 // Only you can issue Catpoints out of nowhere or settle a bet the auto-grader can't
 // reach -- gated client-side by your login email (the database enforces the "issue"
 // half for real via RLS; see catpoints_schema.sql).
@@ -3258,6 +3321,7 @@ function refreshBetViews() {
   renderMyWagers();
   renderIncomingChallenges();
   renderTailBets();
+  renderH2HLeaderboard();
   updateMyBetsAlertDot();
   if (isAdmin()) renderAdminPanel();
   const teamView = document.getElementById('view-team');
@@ -3490,6 +3554,7 @@ function renderPickEm() {
   renderMyWagers();
   renderIncomingChallenges();
   renderTailBets();
+  renderH2HLeaderboard();
   renderFuturesBoard('futures-champion-board', 'champion');
   renderFuturesBoard('futures-top3-board', 'top3');
   renderFuturesBoard('futures-sacko-board', 'last');
