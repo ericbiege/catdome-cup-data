@@ -933,8 +933,6 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .ptl-legs { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
 .ptl-leg { font-size: 13px; }
 .ptl-add-form { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
-.ptl-cashout-row { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 0; }
-.ptl-cashout-row input { width: auto; }
 .ptl-waiting { margin: 10px 0 0; }
 
 /* ---------- Live bet tracker (My Bets) ---------- */
@@ -1634,7 +1632,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
 
     <div class="pickem-panel" data-pickem-panel="ptl">
       <div class="yardline" data-label="Pass the Leg"></div>
-      <div class="desc" style="margin-bottom:14px;">A group parlay, passed team to team &mdash; one leg at a time. Everyone who adds a leg antes the same stake into the pot; if every leg hits, the payout splits evenly no matter whose leg it was. Locks at kickoff of the earliest week in the chain.</div>
+      <div class="desc" style="margin-bottom:14px;">A group parlay, passed team to team &mdash; one leg at a time. Everyone who adds a leg antes the same stake into the pot; if every leg hits, the payout splits evenly no matter whose leg it was. Locks automatically at kickoff of the earliest week in the chain, however many legs are on it by then.</div>
 
       <div class="card bet-builder" id="ptl-start-builder">
         <div class="row2">
@@ -1649,15 +1647,8 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
         <label for="ptl-start-pick">Your Leg</label>
         <input type="text" id="ptl-start-pick" placeholder="e.g. Breez Lutz covers -6.5" autocomplete="off">
-        <div class="row2">
-          <div>
-            <label for="ptl-start-passto">Pass It To</label>
-            <select id="ptl-start-passto"></select>
-          </div>
-          <div style="display:flex;align-items:flex-end;">
-            <label class="ptl-cashout-row"><input type="checkbox" id="ptl-start-cashout"> Cash out instead &mdash; keep it solo</label>
-          </div>
-        </div>
+        <label for="ptl-start-passto">Pass It To</label>
+        <select id="ptl-start-passto"></select>
         <div class="bet-actions">
           <button class="btn" type="button" id="ptl-start-submit">Start the Chain</button>
           <div class="form-status" id="ptl-start-status"></div>
@@ -4245,24 +4236,17 @@ function ptlCardHtml(p) {
       <div class="ptl-add-form bet-builder">
         <label for="ptl-pick-${p.id}">Your Leg &mdash; antes ${cp(p.stake)}</label>
         <input type="text" id="ptl-pick-${p.id}" placeholder="e.g. Breez Lutz covers -6.5" autocomplete="off">
-        <div class="row2">
-          <div>
-            <label for="ptl-week-${p.id}">Week</label>
-            <select id="ptl-week-${p.id}"></select>
-          </div>
-          <div>
-            <label for="ptl-passto-${p.id}">Pass It To</label>
-            <select id="ptl-passto-${p.id}"></select>
-          </div>
-        </div>
-        <label class="ptl-cashout-row"><input type="checkbox" id="ptl-cashout-${p.id}"> Cash out instead &mdash; lock it here</label>
+        <label for="ptl-week-${p.id}">Week</label>
+        <select id="ptl-week-${p.id}"></select>
+        <label for="ptl-passto-${p.id}">Pass It To</label>
+        <select id="ptl-passto-${p.id}"></select>
         <div class="bet-actions">
           <button class="btn" type="button" data-ptl-add="${p.id}">Add Your Leg</button>
           <div class="form-status" id="ptl-add-status-${p.id}"></div>
         </div>
       </div>`;
   } else if (waitingOn) {
-    actionHtml = `<div class="desc ptl-waiting">Waiting on <strong>${escapeHtml(teamName(p.currentHolderTeamId))}</strong> to add a leg or cash out.</div>`;
+    actionHtml = `<div class="desc ptl-waiting">Waiting on <strong>${escapeHtml(teamName(p.currentHolderTeamId))}</strong> to add the next leg.</div>`;
   } else if (gradeable) {
     actionHtml = `
       <div class="bet-ledger-settle">
@@ -4274,8 +4258,6 @@ function ptlCardHtml(p) {
     actionHtml = `<div class="bet-win-banner"><span class="trophy">&#127942;</span><span>Hit! ${cp(share)} each to ${legs.length} contributor${legs.length === 1 ? '' : 's'}</span></div>`;
   } else if (awaitingGrade) {
     actionHtml = `<div class="desc ptl-waiting">Locked at kickoff &mdash; waiting on the book to grade it.</div>`;
-  } else if (p.status === 'locked') {
-    actionHtml = `<div class="desc ptl-waiting">Cashed out &mdash; locked in, good luck!</div>`;
   }
   return `
     <div class="card bet-ledger-row" data-ptl-id="${p.id}">
@@ -4311,11 +4293,10 @@ async function startPassTheLeg() {
   const stake = Number(document.getElementById('ptl-start-stake').value) || 0;
   const pickInput = document.getElementById('ptl-start-pick');
   const pick = pickInput.value.trim();
-  const cashOut = document.getElementById('ptl-start-cashout').checked;
   const passTo = document.getElementById('ptl-start-passto').value;
   if (stake <= 0) { statusEl.textContent = 'Enter a stake.'; statusEl.className = 'form-status err'; return; }
   if (!pick) { statusEl.textContent = 'Add your leg.'; statusEl.className = 'form-status err'; return; }
-  if (!cashOut && !passTo) { statusEl.textContent = 'Pick who to pass it to, or cash out.'; statusEl.className = 'form-status err'; return; }
+  if (!passTo) { statusEl.textContent = 'Pick who to pass it to.'; statusEl.className = 'form-status err'; return; }
   const balance = CATPOINTS_BALANCES.get(currentActingTeamId) || 0;
   if (stake > balance) { statusEl.textContent = `You've only got ${cp(balance)}.`; statusEl.className = 'form-status err'; return; }
   const submitBtn = document.getElementById('ptl-start-submit');
@@ -4324,8 +4305,8 @@ async function startPassTheLeg() {
   const parlayId = 'ptl' + Date.now() + Math.random().toString(36).slice(2, 7);
   const locksAt = weekKickoffEstimate(week);
   const { error: pErr } = await supabaseClient.from('pass_the_leg').insert({
-    id: parlayId, initiator_team_id: currentActingTeamId, current_holder_team_id: cashOut ? null : passTo,
-    stake, status: cashOut ? 'locked' : 'open', week, locks_at: locksAt.toISOString(),
+    id: parlayId, initiator_team_id: currentActingTeamId, current_holder_team_id: passTo,
+    stake, status: 'open', week, locks_at: locksAt.toISOString(),
   });
   if (pErr) {
     console.error('startPassTheLeg parlay insert failed', pErr);
@@ -4343,20 +4324,17 @@ async function startPassTheLeg() {
   if (ledgerErr) console.error('startPassTheLeg stake debit failed', ledgerErr);
   pickInput.value = '';
   document.getElementById('ptl-start-stake').value = '';
-  document.getElementById('ptl-start-cashout').checked = false;
   submitBtn.disabled = false;
   await loadCatpoints();
   await loadPassTheLeg();
-  if (!cashOut) {
-    postNewsAuto(`${teamName(currentActingTeamId)} started a Pass the Leg chain and handed it to ${teamName(passTo)}: ${stripEntities(pick)}.`, 'bet_result', currentActingTeamId);
-    sendPushNotification(passTo, {
-      title: `${teamName(currentActingTeamId)} passed you the leg`,
-      body: `Add your leg to the chain for ${cp(stake)}, or cash it out — in Sportsbook > Pass the Leg.`,
-      url: '/#/pickem/ptl/' + parlayId,
-      tag: 'ptl-' + parlayId,
-    });
-  }
-  showToast(cashOut ? 'Chain locked in — good luck!' : 'Chain started — passed along!');
+  postNewsAuto(`${teamName(currentActingTeamId)} started a Pass the Leg chain and handed it to ${teamName(passTo)}: ${stripEntities(pick)}.`, 'bet_result', currentActingTeamId);
+  sendPushNotification(passTo, {
+    title: `${teamName(currentActingTeamId)} passed you the leg`,
+    body: `Add your leg to the chain for ${cp(stake)} — in Sportsbook > Pass the Leg.`,
+    url: '/#/pickem/ptl/' + parlayId,
+    tag: 'ptl-' + parlayId,
+  });
+  showToast('Chain started — passed along!');
 }
 
 async function addPtlLeg(parlayId) {
@@ -4372,14 +4350,12 @@ async function addPtlLeg(parlayId) {
   }
   const pickInput = document.getElementById(`ptl-pick-${parlayId}`);
   const weekSel = document.getElementById(`ptl-week-${parlayId}`);
-  const cashOutBox = document.getElementById(`ptl-cashout-${parlayId}`);
   const passToSel = document.getElementById(`ptl-passto-${parlayId}`);
   const pick = pickInput.value.trim();
   const week = Number(weekSel.value) || currentLeagueWeek();
-  const cashOut = cashOutBox.checked;
   const passTo = passToSel.value;
   if (!pick) { statusEl.textContent = 'Add your leg.'; statusEl.className = 'form-status err'; return; }
-  if (!cashOut && !passTo) { statusEl.textContent = 'Pick who to pass it to, or cash out.'; statusEl.className = 'form-status err'; return; }
+  if (!passTo) { statusEl.textContent = 'Pick who to pass it to.'; statusEl.className = 'form-status err'; return; }
   const balance = CATPOINTS_BALANCES.get(currentActingTeamId) || 0;
   if (p.stake > balance) { statusEl.textContent = `You've only got ${cp(balance)} — this chain antes ${cp(p.stake)}.`; statusEl.className = 'form-status err'; return; }
   const btn = document.querySelector(`[data-ptl-add="${parlayId}"]`);
@@ -4400,7 +4376,7 @@ async function addPtlLeg(parlayId) {
   const newLocksAt = new Date(Math.min(new Date(p.locksAt).getTime(), weekKickoffEstimate(week).getTime()));
   const newWeek = Math.min(p.week, week);
   const { error: uErr } = await supabaseClient.from('pass_the_leg')
-    .update({ current_holder_team_id: cashOut ? null : passTo, status: cashOut ? 'locked' : 'open', week: newWeek, locks_at: newLocksAt.toISOString() })
+    .update({ current_holder_team_id: passTo, status: 'open', week: newWeek, locks_at: newLocksAt.toISOString() })
     .eq('id', parlayId);
   if (uErr) console.error('addPtlLeg parlay update failed', uErr);
   const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
@@ -4409,16 +4385,14 @@ async function addPtlLeg(parlayId) {
   if (ledgerErr) console.error('addPtlLeg stake debit failed', ledgerErr);
   await loadCatpoints();
   await loadPassTheLeg();
-  if (!cashOut) {
-    postNewsAuto(`${teamName(currentActingTeamId)} added a leg to a Pass the Leg chain and handed it to ${teamName(passTo)}: ${stripEntities(pick)}.`, 'bet_result', currentActingTeamId);
-    sendPushNotification(passTo, {
-      title: `${teamName(currentActingTeamId)} passed you the leg`,
-      body: `Add your leg to the chain for ${cp(p.stake)}, or cash it out — in Sportsbook > Pass the Leg.`,
-      url: '/#/pickem/ptl/' + parlayId,
-      tag: 'ptl-' + parlayId,
-    });
-  }
-  showToast(cashOut ? 'Cashed out — locked in!' : 'Leg added — passed along!');
+  postNewsAuto(`${teamName(currentActingTeamId)} added a leg to a Pass the Leg chain and handed it to ${teamName(passTo)}: ${stripEntities(pick)}.`, 'bet_result', currentActingTeamId);
+  sendPushNotification(passTo, {
+    title: `${teamName(currentActingTeamId)} passed you the leg`,
+    body: `Add your leg to the chain for ${cp(p.stake)} — in Sportsbook > Pass the Leg.`,
+    url: '/#/pickem/ptl/' + parlayId,
+    tag: 'ptl-' + parlayId,
+  });
+  showToast('Leg added — passed along!');
 }
 
 async function settlePassTheLeg(parlayId, outcome) {
