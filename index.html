@@ -929,6 +929,14 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 }
 .bet-win-banner .trophy { font-size: 18px; }
 
+/* ---------- Pass the Leg: group parlay chain ---------- */
+.ptl-legs { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.ptl-leg { font-size: 13px; }
+.ptl-add-form { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+.ptl-cashout-row { display: flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 0; }
+.ptl-cashout-row input { width: auto; }
+.ptl-waiting { margin: 10px 0 0; }
+
 /* ---------- Live bet tracker (My Bets) ---------- */
 .live-tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .track-card {
@@ -1184,6 +1192,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <button type="button" class="pickem-tab-btn" data-pickem-tab="nfl" aria-current="false">NFL Game Lines</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="futures" aria-current="false">Futures</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="props" aria-current="false">H2H Challenge</button>
+      <button type="button" class="pickem-tab-btn" data-pickem-tab="ptl" aria-current="false">Pass the Leg</button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="mybets" aria-current="false">My Bets<span class="tab-alert-dot" id="mybets-alert-dot" hidden></span></button>
       <button type="button" class="pickem-tab-btn" data-pickem-tab="book" aria-current="false" hidden>The Book</button>
     </div>
@@ -1621,6 +1630,45 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
 
       <div class="yardline" data-label="Most Points Won &middot; H2H Challenges"></div>
       <div id="h2h-leaderboard"></div>
+    </div>
+
+    <div class="pickem-panel" data-pickem-panel="ptl">
+      <div class="yardline" data-label="Pass the Leg"></div>
+      <div class="desc" style="margin-bottom:14px;">A group parlay, passed team to team &mdash; one leg at a time. Everyone who adds a leg antes the same stake into the pot; if every leg hits, the payout splits evenly no matter whose leg it was. Locks at kickoff of the earliest week in the chain.</div>
+
+      <div class="card bet-builder" id="ptl-start-builder">
+        <div class="row2">
+          <div>
+            <label for="ptl-start-week">Week</label>
+            <select id="ptl-start-week"></select>
+          </div>
+          <div>
+            <label for="ptl-start-stake">Stake &mdash; everyone antes this much</label>
+            <input type="number" id="ptl-start-stake" min="1" step="1" placeholder="e.g. 25">
+          </div>
+        </div>
+        <label for="ptl-start-pick">Your Leg</label>
+        <input type="text" id="ptl-start-pick" placeholder="e.g. Breez Lutz covers -6.5" autocomplete="off">
+        <div class="row2">
+          <div>
+            <label for="ptl-start-passto">Pass It To</label>
+            <select id="ptl-start-passto"></select>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <label class="ptl-cashout-row"><input type="checkbox" id="ptl-start-cashout"> Cash out instead &mdash; keep it solo</label>
+          </div>
+        </div>
+        <div class="bet-actions">
+          <button class="btn" type="button" id="ptl-start-submit">Start the Chain</button>
+          <div class="form-status" id="ptl-start-status"></div>
+        </div>
+      </div>
+
+      <div class="yardline" data-label="Chains In Progress" style="margin-top:26px;"></div>
+      <div id="ptl-active-list" class="matchup-list"></div>
+
+      <div class="yardline" data-label="Settled Chains" style="margin-top:26px;"></div>
+      <div id="ptl-settled-list" class="matchup-list"></div>
     </div>
 
     <div class="pickem-panel" data-pickem-panel="mybets">
@@ -4071,6 +4119,343 @@ function subscribeBets() {
     .subscribe();
 }
 
+// ---- Pass the Leg: a group parlay passed team-to-team, one leg at a time ----
+// New ground for this app -- every other bet type has exactly one team's stake
+// on it (or, for an H2H challenge, exactly two). Here any number of teams each
+// ante the same stake and add one leg to a single shared parlay, passing it
+// along until someone cashes out or it locks on its own. Lives in its own pair
+// of tables (pass_the_leg / pass_the_leg_legs) rather than shoehorning into
+// `bets`, since `bets` has no room for a growable list of contributors.
+let PASS_THE_LEG = [];
+let PASS_THE_LEG_LEGS = [];
+
+function mapPtlRow(row) {
+  return {
+    id: row.id,
+    createdAt: row.created_at,
+    initiatorTeamId: row.initiator_team_id,
+    currentHolderTeamId: row.current_holder_team_id || null,
+    stake: Number(row.stake) || 0,
+    status: row.status,
+    result: row.result || null,
+    week: row.week != null ? Number(row.week) : null,
+    locksAt: row.locks_at,
+    settledAt: row.settled_at,
+    settledBy: row.settled_by || null,
+  };
+}
+function mapPtlLegRow(row) {
+  return {
+    id: row.id,
+    parlayId: row.parlay_id,
+    seq: Number(row.seq) || 0,
+    teamId: row.team_id,
+    week: row.week != null ? Number(row.week) : null,
+    pickText: row.pick_text,
+    odds: row.odds != null ? Number(row.odds) : HOUSE_ODDS,
+    createdAt: row.created_at,
+  };
+}
+function ptlLegsFor(parlayId) {
+  return PASS_THE_LEG_LEGS.filter(l => l.parlayId === parlayId).sort((a, b) => a.seq - b.seq);
+}
+// A Pass the Leg chain has no single real game to key off of -- a leg can be
+// any market, and NFL odds syncing isn't always live (see loadNflGames) -- so
+// "kickoff of the earliest game" is estimated as that week's Thursday Night
+// Football window, the earliest real NFL kickoff of any week, anchored off
+// the same SEASON_WEEK1_START used everywhere else on the site.
+function weekKickoffEstimate(week) {
+  const w = Math.max(1, Number(week) || 1);
+  return new Date(SEASON_WEEK1_START.getTime() + (w - 1) * 7 * 86400000 + 86400000 + (20 * 60 + 20) * 60000);
+}
+function ptlDecimalOdds(legs) {
+  return legs.reduce((mult, l) => mult * americanToDecimalOdds(l.odds || HOUSE_ODDS), 1);
+}
+function ptlPot(p, legs) { return (legs.length || 0) * (Number(p.stake) || 0); }
+function ptlPotentialPayout(p, legs) { return ptlPot(p, legs) * ptlDecimalOdds(legs); }
+function ptlIsPastLock(p) { return !!(p.locksAt && new Date(p.locksAt) <= new Date()); }
+
+async function loadPassTheLeg() {
+  const [{ data: parlays, error: pErr }, { data: legs, error: lErr }] = await Promise.all([
+    supabaseClient.from('pass_the_leg').select('*').order('created_at', { ascending: false }),
+    supabaseClient.from('pass_the_leg_legs').select('*').order('seq', { ascending: true }),
+  ]);
+  if (pErr) console.error('loadPassTheLeg parlays failed', pErr);
+  if (lErr) console.error('loadPassTheLeg legs failed', lErr);
+  PASS_THE_LEG = (parlays || []).map(mapPtlRow);
+  PASS_THE_LEG_LEGS = (legs || []).map(mapPtlLegRow);
+  renderPassTheLeg();
+}
+function subscribePassTheLeg() {
+  supabaseClient.channel('pass-the-leg-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pass_the_leg' }, () => { loadPassTheLeg(); })
+    .subscribe();
+  supabaseClient.channel('pass-the-leg-legs-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pass_the_leg_legs' }, () => { loadPassTheLeg(); })
+    .subscribe();
+}
+
+function fillPtlWeekSelect(sel) {
+  if (!sel) return;
+  const cur = currentLeagueWeek();
+  const prevValue = sel.value;
+  sel.innerHTML = '';
+  for (let w = cur; w <= 17; w++) {
+    const opt = document.createElement('option');
+    opt.value = String(w); opt.textContent = `Week ${w}`;
+    sel.appendChild(opt);
+  }
+  if (prevValue && [...sel.options].some(o => o.value === prevValue)) sel.value = prevValue;
+}
+function fillPtlTeamSelect(sel, excludeId) {
+  if (!sel) return;
+  const prevValue = sel.value;
+  sel.innerHTML = activeTeams().filter(t => t.id !== excludeId).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  if (prevValue && [...sel.options].some(o => o.value === prevValue)) sel.value = prevValue;
+}
+
+function ptlStatusBadge(p, pastLock) {
+  if (p.status === 'settled') {
+    if (p.result === 'win') return '<span class="badge champ">Won</span>';
+    if (p.result === 'push') return '<span class="badge reg">Push</span>';
+    return '<span class="badge sacko">Lost</span>';
+  }
+  if (p.status === 'locked' || pastLock) return '<span class="badge sacko">Locked</span>';
+  return '<span class="badge pending">Open</span>';
+}
+function ptlLegsHtml(legs) {
+  return legs.map((l, i) => `<div class="ptl-leg"><span class="mono">${i + 1}.</span> <strong>${escapeHtml(teamName(l.teamId))}</strong> &mdash; ${escapeHtml(l.pickText)} <span class="mono">(${formatOdds(l.odds)})</span></div>`).join('');
+}
+
+function ptlCardHtml(p) {
+  const legs = ptlLegsFor(p.id);
+  const pastLock = ptlIsPastLock(p);
+  const pot = ptlPot(p, legs);
+  const payout = ptlPotentialPayout(p, legs);
+  const share = legs.length ? payout / legs.length : 0;
+  // Grading always waits for the actual game(s) to happen -- cashing out just
+  // stops new legs from being added, it doesn't fast-forward kickoff.
+  const awaitingGrade = p.status !== 'settled' && pastLock;
+  const gradeable = isAdmin() && awaitingGrade;
+  const isMyTurn = p.status === 'open' && !pastLock && p.currentHolderTeamId && p.currentHolderTeamId === currentActingTeamId;
+  const waitingOn = p.status === 'open' && !pastLock && p.currentHolderTeamId && !isMyTurn;
+  let actionHtml = '';
+  if (isMyTurn) {
+    actionHtml = `
+      <div class="ptl-add-form bet-builder">
+        <label for="ptl-pick-${p.id}">Your Leg &mdash; antes ${cp(p.stake)}</label>
+        <input type="text" id="ptl-pick-${p.id}" placeholder="e.g. Breez Lutz covers -6.5" autocomplete="off">
+        <div class="row2">
+          <div>
+            <label for="ptl-week-${p.id}">Week</label>
+            <select id="ptl-week-${p.id}"></select>
+          </div>
+          <div>
+            <label for="ptl-passto-${p.id}">Pass It To</label>
+            <select id="ptl-passto-${p.id}"></select>
+          </div>
+        </div>
+        <label class="ptl-cashout-row"><input type="checkbox" id="ptl-cashout-${p.id}"> Cash out instead &mdash; lock it here</label>
+        <div class="bet-actions">
+          <button class="btn" type="button" data-ptl-add="${p.id}">Add Your Leg</button>
+          <div class="form-status" id="ptl-add-status-${p.id}"></div>
+        </div>
+      </div>`;
+  } else if (waitingOn) {
+    actionHtml = `<div class="desc ptl-waiting">Waiting on <strong>${escapeHtml(teamName(p.currentHolderTeamId))}</strong> to add a leg or cash out.</div>`;
+  } else if (gradeable) {
+    actionHtml = `
+      <div class="bet-ledger-settle">
+        <button class="btn book-settle-btn" type="button" data-ptl-settle="${p.id}" data-outcome="win">Won</button>
+        <button class="btn ghost book-settle-btn" type="button" data-ptl-settle="${p.id}" data-outcome="loss">Lost</button>
+        <button class="btn ghost book-settle-btn" type="button" data-ptl-settle="${p.id}" data-outcome="push">Push</button>
+      </div>`;
+  } else if (p.status === 'settled' && p.result === 'win') {
+    actionHtml = `<div class="bet-win-banner"><span class="trophy">&#127942;</span><span>Hit! ${cp(share)} each to ${legs.length} contributor${legs.length === 1 ? '' : 's'}</span></div>`;
+  } else if (awaitingGrade) {
+    actionHtml = `<div class="desc ptl-waiting">Locked at kickoff &mdash; waiting on the book to grade it.</div>`;
+  } else if (p.status === 'locked') {
+    actionHtml = `<div class="desc ptl-waiting">Cashed out &mdash; locked in, good luck!</div>`;
+  }
+  return `
+    <div class="card bet-ledger-row" data-ptl-id="${p.id}">
+      <div class="bet-ledger-top">
+        ${ptlStatusBadge(p, pastLock)}
+        <span class="bet-ledger-date mono">Week ${p.week}</span>
+      </div>
+      <div class="ptl-legs">${ptlLegsHtml(legs)}</div>
+      <div class="bet-ledger-stake mono">${cp(pot)} pot (${legs.length} &times; ${cp(p.stake)}) &middot; pays ${cp(payout)} if every leg hits &middot; splits ${cp(share)} each</div>
+      ${actionHtml}
+    </div>`;
+}
+
+function renderPassTheLeg() {
+  const activeWrap = document.getElementById('ptl-active-list');
+  const settledWrap = document.getElementById('ptl-settled-list');
+  if (!activeWrap || !settledWrap) return;
+  const active = PASS_THE_LEG.filter(p => p.status !== 'settled');
+  const settled = PASS_THE_LEG.filter(p => p.status === 'settled');
+  activeWrap.innerHTML = active.length ? active.map(ptlCardHtml).join('') : '<div class="recap-empty">No chains going right now &mdash; start one below.</div>';
+  settledWrap.innerHTML = settled.length ? settled.map(ptlCardHtml).join('') : '<div class="recap-empty">Nothing settled yet.</div>';
+  activeWrap.querySelectorAll('[id^="ptl-week-"]').forEach(sel => fillPtlWeekSelect(sel));
+  activeWrap.querySelectorAll('[id^="ptl-passto-"]').forEach(sel => fillPtlTeamSelect(sel, currentActingTeamId));
+  fillPtlWeekSelect(document.getElementById('ptl-start-week'));
+  fillPtlTeamSelect(document.getElementById('ptl-start-passto'), currentActingTeamId);
+}
+
+async function startPassTheLeg() {
+  const statusEl = document.getElementById('ptl-start-status');
+  if (!requireActingTeam(statusEl)) return;
+  const weekSel = document.getElementById('ptl-start-week');
+  const week = Number(weekSel.value) || currentLeagueWeek();
+  const stake = Number(document.getElementById('ptl-start-stake').value) || 0;
+  const pickInput = document.getElementById('ptl-start-pick');
+  const pick = pickInput.value.trim();
+  const cashOut = document.getElementById('ptl-start-cashout').checked;
+  const passTo = document.getElementById('ptl-start-passto').value;
+  if (stake <= 0) { statusEl.textContent = 'Enter a stake.'; statusEl.className = 'form-status err'; return; }
+  if (!pick) { statusEl.textContent = 'Add your leg.'; statusEl.className = 'form-status err'; return; }
+  if (!cashOut && !passTo) { statusEl.textContent = 'Pick who to pass it to, or cash out.'; statusEl.className = 'form-status err'; return; }
+  const balance = CATPOINTS_BALANCES.get(currentActingTeamId) || 0;
+  if (stake > balance) { statusEl.textContent = `You've only got ${cp(balance)}.`; statusEl.className = 'form-status err'; return; }
+  const submitBtn = document.getElementById('ptl-start-submit');
+  submitBtn.disabled = true;
+  statusEl.textContent = ''; statusEl.className = 'form-status';
+  const parlayId = 'ptl' + Date.now() + Math.random().toString(36).slice(2, 7);
+  const locksAt = weekKickoffEstimate(week);
+  const { error: pErr } = await supabaseClient.from('pass_the_leg').insert({
+    id: parlayId, initiator_team_id: currentActingTeamId, current_holder_team_id: cashOut ? null : passTo,
+    stake, status: cashOut ? 'locked' : 'open', week, locks_at: locksAt.toISOString(),
+  });
+  if (pErr) {
+    console.error('startPassTheLeg parlay insert failed', pErr);
+    showToast("Couldn't start that chain — try again.");
+    submitBtn.disabled = false;
+    return;
+  }
+  const { error: lErr } = await supabaseClient.from('pass_the_leg_legs').insert({
+    id: parlayId + '-1', parlay_id: parlayId, seq: 1, team_id: currentActingTeamId, week, pick_text: pick, odds: HOUSE_ODDS,
+  });
+  if (lErr) console.error('startPassTheLeg leg insert failed', lErr);
+  const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
+    team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', bet_id: parlayId, note: `Pass the Leg: ${stripEntities(pick)}`,
+  });
+  if (ledgerErr) console.error('startPassTheLeg stake debit failed', ledgerErr);
+  pickInput.value = '';
+  document.getElementById('ptl-start-stake').value = '';
+  document.getElementById('ptl-start-cashout').checked = false;
+  submitBtn.disabled = false;
+  await loadCatpoints();
+  await loadPassTheLeg();
+  if (!cashOut) {
+    postNewsAuto(`${teamName(currentActingTeamId)} started a Pass the Leg chain and handed it to ${teamName(passTo)}: ${stripEntities(pick)}.`, 'bet_result', currentActingTeamId);
+    sendPushNotification(passTo, {
+      title: `${teamName(currentActingTeamId)} passed you the leg`,
+      body: `Add your leg to the chain for ${cp(stake)}, or cash it out — in Sportsbook > Pass the Leg.`,
+      url: '/#/pickem/ptl/' + parlayId,
+      tag: 'ptl-' + parlayId,
+    });
+  }
+  showToast(cashOut ? 'Chain locked in — good luck!' : 'Chain started — passed along!');
+}
+
+async function addPtlLeg(parlayId) {
+  const p = PASS_THE_LEG.find(x => x.id === parlayId);
+  if (!p) return;
+  const statusEl = document.getElementById(`ptl-add-status-${parlayId}`);
+  if (!requireActingTeam(statusEl)) return;
+  if (p.currentHolderTeamId !== currentActingTeamId) return;
+  if (ptlIsPastLock(p)) {
+    if (statusEl) { statusEl.textContent = 'This chain already locked at kickoff.'; statusEl.className = 'form-status err'; }
+    await loadPassTheLeg();
+    return;
+  }
+  const pickInput = document.getElementById(`ptl-pick-${parlayId}`);
+  const weekSel = document.getElementById(`ptl-week-${parlayId}`);
+  const cashOutBox = document.getElementById(`ptl-cashout-${parlayId}`);
+  const passToSel = document.getElementById(`ptl-passto-${parlayId}`);
+  const pick = pickInput.value.trim();
+  const week = Number(weekSel.value) || currentLeagueWeek();
+  const cashOut = cashOutBox.checked;
+  const passTo = passToSel.value;
+  if (!pick) { statusEl.textContent = 'Add your leg.'; statusEl.className = 'form-status err'; return; }
+  if (!cashOut && !passTo) { statusEl.textContent = 'Pick who to pass it to, or cash out.'; statusEl.className = 'form-status err'; return; }
+  const balance = CATPOINTS_BALANCES.get(currentActingTeamId) || 0;
+  if (p.stake > balance) { statusEl.textContent = `You've only got ${cp(balance)} — this chain antes ${cp(p.stake)}.`; statusEl.className = 'form-status err'; return; }
+  const btn = document.querySelector(`[data-ptl-add="${parlayId}"]`);
+  if (btn) btn.disabled = true;
+  statusEl.textContent = ''; statusEl.className = 'form-status';
+  const legs = ptlLegsFor(parlayId);
+  const seq = legs.length + 1;
+  const legId = `${parlayId}-${seq}`;
+  const { error: lErr } = await supabaseClient.from('pass_the_leg_legs').insert({
+    id: legId, parlay_id: parlayId, seq, team_id: currentActingTeamId, week, pick_text: pick, odds: HOUSE_ODDS,
+  });
+  if (lErr) {
+    console.error('addPtlLeg leg insert failed', lErr);
+    showToast("Couldn't add that leg — try again.");
+    if (btn) btn.disabled = false;
+    return;
+  }
+  const newLocksAt = new Date(Math.min(new Date(p.locksAt).getTime(), weekKickoffEstimate(week).getTime()));
+  const newWeek = Math.min(p.week, week);
+  const { error: uErr } = await supabaseClient.from('pass_the_leg')
+    .update({ current_holder_team_id: cashOut ? null : passTo, status: cashOut ? 'locked' : 'open', week: newWeek, locks_at: newLocksAt.toISOString() })
+    .eq('id', parlayId);
+  if (uErr) console.error('addPtlLeg parlay update failed', uErr);
+  const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
+    team_id: currentActingTeamId, delta: -p.stake, reason: 'bet_stake', bet_id: parlayId, note: `Pass the Leg: ${stripEntities(pick)}`,
+  });
+  if (ledgerErr) console.error('addPtlLeg stake debit failed', ledgerErr);
+  await loadCatpoints();
+  await loadPassTheLeg();
+  if (!cashOut) {
+    postNewsAuto(`${teamName(currentActingTeamId)} added a leg to a Pass the Leg chain and handed it to ${teamName(passTo)}: ${stripEntities(pick)}.`, 'bet_result', currentActingTeamId);
+    sendPushNotification(passTo, {
+      title: `${teamName(currentActingTeamId)} passed you the leg`,
+      body: `Add your leg to the chain for ${cp(p.stake)}, or cash it out — in Sportsbook > Pass the Leg.`,
+      url: '/#/pickem/ptl/' + parlayId,
+      tag: 'ptl-' + parlayId,
+    });
+  }
+  showToast(cashOut ? 'Cashed out — locked in!' : 'Leg added — passed along!');
+}
+
+async function settlePassTheLeg(parlayId, outcome) {
+  const p = PASS_THE_LEG.find(x => x.id === parlayId);
+  if (!p) return;
+  const legs = ptlLegsFor(parlayId);
+  if (!legs.length) return;
+  const pot = ptlPot(p, legs);
+  const payout = ptlPotentialPayout(p, legs);
+  const share = payout / legs.length;
+  const { error } = await supabaseClient.from('pass_the_leg')
+    .update({ status: 'settled', result: outcome, settled_at: new Date().toISOString(), settled_by: currentActingTeamId || 'book' })
+    .eq('id', parlayId);
+  if (error) { console.error('settlePassTheLeg failed', error); showToast("Couldn't settle that chain — try again."); return; }
+  if (outcome === 'win') {
+    const credits = legs.map(l => ({ team_id: l.teamId, delta: share, reason: 'bet_win', bet_id: parlayId, note: `Pass the Leg hit: ${stripEntities(l.pickText)}`, created_by: currentUser ? currentUser.id : null }));
+    const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert(credits);
+    if (ledgerErr) console.error('settlePassTheLeg win credit failed', ledgerErr);
+    postNewsAuto(`A Pass the Leg chain hit for ${legs.length} team${legs.length === 1 ? '' : 's'} — ${cp(share)} each!`, 'bet_result', legs[0].teamId);
+  } else if (outcome === 'push') {
+    const credits = legs.map(l => ({ team_id: l.teamId, delta: p.stake, reason: 'bet_push', bet_id: parlayId, note: 'Pass the Leg pushed — stake refunded', created_by: currentUser ? currentUser.id : null }));
+    const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert(credits);
+    if (ledgerErr) console.error('settlePassTheLeg push refund failed', ledgerErr);
+  }
+  await loadCatpoints();
+  await loadPassTheLeg();
+  showToast('Chain settled.');
+}
+
+document.getElementById('ptl-start-submit')?.addEventListener('click', startPassTheLeg);
+document.getElementById('ptl-active-list')?.addEventListener('click', e => {
+  const addBtn = e.target.closest('[data-ptl-add]');
+  if (addBtn) { addPtlLeg(addBtn.dataset.ptlAdd); return; }
+  const settleBtn = e.target.closest('[data-ptl-settle]');
+  if (settleBtn) { settlePassTheLeg(settleBtn.dataset.ptlSettle, settleBtn.dataset.outcome); return; }
+});
+
 function shareChallenge(text, btn) {
   const restoreLabel = btn ? btn.textContent : null;
   const onCopied = () => {
@@ -4874,7 +5259,7 @@ function unlockApp() {
 }
 
 async function bootApp() {
-  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts(), loadTeamLogos()]);
+  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts(), loadTeamLogos(), loadPassTheLeg()]);
   // loadNewsPosts() (and setUserBadge(), called earlier from unlockApp()) can
   // resolve/run before loadTeamLogos() does, since they load in parallel above --
   // re-render both now that TEAM_LOGO_URL is guaranteed populated, so avatars
@@ -4888,6 +5273,7 @@ async function bootApp() {
   subscribeNflGames();
   subscribeNflProps();
   subscribeNewsPosts();
+  subscribePassTheLeg();
   navigate(window.location.hash);
 }
 
