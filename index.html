@@ -2846,7 +2846,7 @@ function flashButtonMessage(btn, msg) {
 }
 
 let toastTimer = null;
-function showToast(msg) {
+function showToast(msg, durationMs) {
   let el = document.getElementById('site-toast');
   if (!el) {
     el = document.createElement('div');
@@ -2856,7 +2856,7 @@ function showToast(msg) {
   el.textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => el.classList.remove('show'), durationMs || 2600);
 }
 
 // ---- Catpoints balances -------------------------------------------------
@@ -5491,7 +5491,7 @@ async function renderNotifyToggle() {
   if (subscribed) {
     btn.title = 'Notifications on -- click to turn off';
   } else if (isIOS() && !isStandalone()) {
-    btn.title = 'Add to Home Screen first to enable notifications on iPhone/iPad';
+    btn.title = "iPhone/iPad only allow notifications from the Home Screen app icon, not a browser tab like this one -- open Catdome Cup from its Home Screen icon and try again there";
   } else {
     btn.title = 'Get notified about challenges (and more, soon)';
   }
@@ -5499,7 +5499,7 @@ async function renderNotifyToggle() {
 async function subscribeToPush() {
   if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
   if (isIOS() && !isStandalone()) {
-    showToast('On iPhone/iPad, add Catdome Cup to your Home Screen first (Share -> Add to Home Screen), then open it from there and try the bell again.');
+    showToast("You're in a Safari tab, not the Home Screen app -- iPhone/iPad only allow notifications from the Home Screen icon. If you just signed in from an email link, that always opens Safari (an iOS thing, not a bug) -- switch to the Catdome Cup icon on your Home Screen and try the bell there.", 8000);
     return;
   }
   try {
