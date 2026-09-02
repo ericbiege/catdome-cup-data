@@ -1045,13 +1045,19 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
   <div class="auth-card">
     <div class="auth-brand">Catdome&nbsp;Cup</div>
     <h2>Sign in to pick &amp; bet</h2>
-    <p class="auth-copy">Enter your email and we'll send you a magic link &mdash; no password to remember.</p>
+    <p class="auth-copy">Enter your email and we'll send you a sign-in link and a 6-digit code &mdash; no password to remember. On iPhone/iPad, if you've added Catdome Cup to your Home Screen, use the code so you don't have to leave the app.</p>
     <form id="auth-email-form">
       <label for="auth-email" class="visually-hidden">Email</label>
       <input id="auth-email" type="email" placeholder="you@email.com" autocomplete="email" required>
       <button type="submit" class="btn" id="auth-email-submit">Send Magic Link</button>
     </form>
     <div class="form-status" id="auth-email-status"></div>
+    <form id="auth-code-form" hidden>
+      <label for="auth-code" class="visually-hidden">6-digit code</label>
+      <input id="auth-code" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" placeholder="6-digit code from the email" maxlength="6">
+      <button type="submit" class="btn ghost" id="auth-code-submit">Enter Code Instead</button>
+    </form>
+    <div class="form-status" id="auth-code-status"></div>
   </div>
 </div>
 
@@ -4942,7 +4948,41 @@ document.getElementById('auth-email-form').addEventListener('submit', async (e) 
     return;
   }
   statusEl.className = 'form-status ok';
-  statusEl.textContent = `Check ${email} for a sign-in link.`;
+  statusEl.textContent = `Check ${email} for a sign-in link and a 6-digit code.`;
+  // The code form lets you finish signing in without leaving this page --
+  // important on iOS, where tapping the emailed link always opens Safari
+  // and drops you out of the installed Home Screen app (a platform
+  // limitation, not something we can route around). Typing the code here
+  // keeps you in whichever context -- browser tab or standalone app -- you
+  // started from.
+  const codeForm = document.getElementById('auth-code-form');
+  if (codeForm) codeForm.hidden = false;
+});
+
+document.getElementById('auth-code-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const emailInput = document.getElementById('auth-email');
+  const codeInput = document.getElementById('auth-code');
+  const submitBtn = document.getElementById('auth-code-submit');
+  const statusEl = document.getElementById('auth-code-status');
+  const email = emailInput.value.trim();
+  const token = codeInput.value.trim();
+  if (!email || !token) { statusEl.className = 'form-status err'; statusEl.textContent = 'Enter the email above and the code from your inbox.'; return; }
+  submitBtn.disabled = true;
+  statusEl.className = 'form-status pending';
+  statusEl.textContent = 'Checking…';
+  const { error } = await supabaseClient.auth.verifyOtp({ email, token, type: 'email' });
+  submitBtn.disabled = false;
+  if (error) {
+    statusEl.className = 'form-status err';
+    statusEl.textContent = "That code didn't work -- double check it (or request a new one) and try again.";
+    return;
+  }
+  statusEl.className = 'form-status ok';
+  statusEl.textContent = "You're in!";
+  // No further action needed here -- supabaseClient.auth.onAuthStateChange
+  // (registered above) picks up the new session and moves past the auth
+  // gate on its own, same as the magic-link path.
 });
 
 document.getElementById('team-picker-form').addEventListener('submit', async (e) => {
