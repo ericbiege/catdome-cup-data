@@ -5551,6 +5551,7 @@ function getLastSeenActivityTime() {
 function markActivitySeen() {
   try { localStorage.setItem(activitySeenKey(), new Date().toISOString()); } catch (e) {}
   updateNotifyBadge();
+  checkUnseenCatpoints(); // re-queries against the new lastSeen and updates the badge again once it resolves
 }
 // Whether currentActingTeamId has a Catpoints credit newer than lastSeen --
 // requires its own query since nothing else fetches per-team ledger rows;
