@@ -934,6 +934,10 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .ptl-leg { font-size: 13px; }
 .ptl-add-form { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
 .ptl-waiting { margin: 10px 0 0; }
+.ptl-week-badge {
+  font-family: var(--font-body); font-size: 14px; padding: 9px 11px;
+  background: var(--paper-sunken); border: 1px solid var(--line); border-radius: 6px; color: var(--ink);
+}
 
 /* ---------- Live bet tracker (My Bets) ---------- */
 .live-tracker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
@@ -1637,8 +1641,8 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
       <div class="card bet-builder" id="ptl-start-builder">
         <div class="row2">
           <div>
-            <label for="ptl-start-week">Week</label>
-            <select id="ptl-start-week"></select>
+            <label>Week</label>
+            <div class="ptl-week-badge mono" id="ptl-start-week-badge"></div>
           </div>
           <div>
             <label for="ptl-start-stake">Stake &mdash; everyone antes this much</label>
@@ -4186,18 +4190,6 @@ function subscribePassTheLeg() {
     .subscribe();
 }
 
-function fillPtlWeekSelect(sel) {
-  if (!sel) return;
-  const cur = currentLeagueWeek();
-  const prevValue = sel.value;
-  sel.innerHTML = '';
-  for (let w = cur; w <= 17; w++) {
-    const opt = document.createElement('option');
-    opt.value = String(w); opt.textContent = `Week ${w}`;
-    sel.appendChild(opt);
-  }
-  if (prevValue && [...sel.options].some(o => o.value === prevValue)) sel.value = prevValue;
-}
 function fillPtlTeamSelect(sel, excludeId) {
   if (!sel) return;
   const prevValue = sel.value;
@@ -4236,8 +4228,8 @@ function ptlCardHtml(p) {
       <div class="ptl-add-form bet-builder">
         <label for="ptl-pick-${p.id}">Your Leg &mdash; antes ${cp(p.stake)}</label>
         <input type="text" id="ptl-pick-${p.id}" placeholder="e.g. Breez Lutz covers -6.5" autocomplete="off">
-        <label for="ptl-week-${p.id}">Week</label>
-        <select id="ptl-week-${p.id}"></select>
+        <label>Week</label>
+        <div class="ptl-week-badge mono" id="ptl-week-badge-${p.id}">Week ${currentLeagueWeek()}</div>
         <label for="ptl-passto-${p.id}">Pass It To</label>
         <select id="ptl-passto-${p.id}"></select>
         <div class="bet-actions">
@@ -4279,17 +4271,16 @@ function renderPassTheLeg() {
   const settled = PASS_THE_LEG.filter(p => p.status === 'settled');
   activeWrap.innerHTML = active.length ? active.map(ptlCardHtml).join('') : '<div class="recap-empty">No chains going right now &mdash; start one below.</div>';
   settledWrap.innerHTML = settled.length ? settled.map(ptlCardHtml).join('') : '<div class="recap-empty">Nothing settled yet.</div>';
-  activeWrap.querySelectorAll('[id^="ptl-week-"]').forEach(sel => fillPtlWeekSelect(sel));
   activeWrap.querySelectorAll('[id^="ptl-passto-"]').forEach(sel => fillPtlTeamSelect(sel, currentActingTeamId));
-  fillPtlWeekSelect(document.getElementById('ptl-start-week'));
+  const startWeekBadge = document.getElementById('ptl-start-week-badge');
+  if (startWeekBadge) startWeekBadge.textContent = `Week ${currentLeagueWeek()}`;
   fillPtlTeamSelect(document.getElementById('ptl-start-passto'), currentActingTeamId);
 }
 
 async function startPassTheLeg() {
   const statusEl = document.getElementById('ptl-start-status');
   if (!requireActingTeam(statusEl)) return;
-  const weekSel = document.getElementById('ptl-start-week');
-  const week = Number(weekSel.value) || currentLeagueWeek();
+  const week = currentLeagueWeek();
   const stake = Number(document.getElementById('ptl-start-stake').value) || 0;
   const pickInput = document.getElementById('ptl-start-pick');
   const pick = pickInput.value.trim();
@@ -4349,10 +4340,9 @@ async function addPtlLeg(parlayId) {
     return;
   }
   const pickInput = document.getElementById(`ptl-pick-${parlayId}`);
-  const weekSel = document.getElementById(`ptl-week-${parlayId}`);
   const passToSel = document.getElementById(`ptl-passto-${parlayId}`);
   const pick = pickInput.value.trim();
-  const week = Number(weekSel.value) || currentLeagueWeek();
+  const week = currentLeagueWeek();
   const passTo = passToSel.value;
   if (!pick) { statusEl.textContent = 'Add your leg.'; statusEl.className = 'form-status err'; return; }
   if (!passTo) { statusEl.textContent = 'Pick who to pass it to.'; statusEl.className = 'form-status err'; return; }
