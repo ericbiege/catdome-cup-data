@@ -4338,7 +4338,7 @@ async function startPassTheLeg() {
   });
   if (lErr) console.error('startPassTheLeg leg insert failed', lErr);
   const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
-    team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', bet_id: parlayId, note: `Pass the Leg: ${stripEntities(pick)}`,
+    team_id: currentActingTeamId, delta: -stake, reason: 'bet_stake', note: `Pass the Leg: ${stripEntities(pick)}`,
   });
   if (ledgerErr) console.error('startPassTheLeg stake debit failed', ledgerErr);
   pickInput.value = '';
@@ -4404,7 +4404,7 @@ async function addPtlLeg(parlayId) {
     .eq('id', parlayId);
   if (uErr) console.error('addPtlLeg parlay update failed', uErr);
   const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert({
-    team_id: currentActingTeamId, delta: -p.stake, reason: 'bet_stake', bet_id: parlayId, note: `Pass the Leg: ${stripEntities(pick)}`,
+    team_id: currentActingTeamId, delta: -p.stake, reason: 'bet_stake', note: `Pass the Leg: ${stripEntities(pick)}`,
   });
   if (ledgerErr) console.error('addPtlLeg stake debit failed', ledgerErr);
   await loadCatpoints();
@@ -4434,12 +4434,12 @@ async function settlePassTheLeg(parlayId, outcome) {
     .eq('id', parlayId);
   if (error) { console.error('settlePassTheLeg failed', error); showToast("Couldn't settle that chain — try again."); return; }
   if (outcome === 'win') {
-    const credits = legs.map(l => ({ team_id: l.teamId, delta: share, reason: 'bet_win', bet_id: parlayId, note: `Pass the Leg hit: ${stripEntities(l.pickText)}`, created_by: currentUser ? currentUser.id : null }));
+    const credits = legs.map(l => ({ team_id: l.teamId, delta: share, reason: 'bet_win', note: `Pass the Leg hit: ${stripEntities(l.pickText)}`, created_by: currentUser ? currentUser.id : null }));
     const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert(credits);
     if (ledgerErr) console.error('settlePassTheLeg win credit failed', ledgerErr);
     postNewsAuto(`A Pass the Leg chain hit for ${legs.length} team${legs.length === 1 ? '' : 's'} — ${cp(share)} each!`, 'bet_result', legs[0].teamId);
   } else if (outcome === 'push') {
-    const credits = legs.map(l => ({ team_id: l.teamId, delta: p.stake, reason: 'bet_push', bet_id: parlayId, note: 'Pass the Leg pushed — stake refunded', created_by: currentUser ? currentUser.id : null }));
+    const credits = legs.map(l => ({ team_id: l.teamId, delta: p.stake, reason: 'bet_push', note: 'Pass the Leg pushed — stake refunded', created_by: currentUser ? currentUser.id : null }));
     const { error: ledgerErr } = await supabaseClient.from('catpoints_ledger').insert(credits);
     if (ledgerErr) console.error('settlePassTheLeg push refund failed', ledgerErr);
   }
