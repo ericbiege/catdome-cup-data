@@ -5457,6 +5457,21 @@ function urlBase64ToUint8Array(base64String) {
 function pushSupported() {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
+// iOS Safari (and any browser using iOS's WebKit, e.g. Chrome/Firefox on iPhone/iPad)
+// only allows Web Push for a site that's been added to the Home Screen and is
+// running standalone -- a regular browser tab still passes pushSupported() above
+// (the APIs exist) but Notification.requestPermission()/pushManager.subscribe()
+// silently fail there, so this needs its own check to give an actionable message
+// instead of the generic "try again" toast.
+function isIOS() {
+  const ua = navigator.userAgent || '';
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPadOS 13+ reports as "Macintosh" but has touch support unlike a real Mac
+  return navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+}
+function isStandalone() {
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+}
 async function isPushSubscribed() {
   if (!pushSupported()) return false;
   try {
@@ -5473,10 +5488,20 @@ async function renderNotifyToggle() {
   btn.hidden = false;
   const subscribed = await isPushSubscribed();
   btn.setAttribute('aria-pressed', subscribed ? 'true' : 'false');
-  btn.title = subscribed ? "Notifications on -- click to turn off" : 'Get notified about challenges (and more, soon)';
+  if (subscribed) {
+    btn.title = 'Notifications on -- click to turn off';
+  } else if (isIOS() && !isStandalone()) {
+    btn.title = 'Add to Home Screen first to enable notifications on iPhone/iPad';
+  } else {
+    btn.title = 'Get notified about challenges (and more, soon)';
+  }
 }
 async function subscribeToPush() {
   if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
+  if (isIOS() && !isStandalone()) {
+    showToast('On iPhone/iPad, add Catdome Cup to your Home Screen first (Share -> Add to Home Screen), then open it from there and try the bell again.');
+    return;
+  }
   try {
     const reg = await navigator.serviceWorker.register('/sw.js');
     const permission = await Notification.requestPermission();
