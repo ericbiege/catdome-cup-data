@@ -555,6 +555,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--gold); outl
 .site-search-toggle[aria-expanded="true"] { background: var(--gold); color: var(--field); }
 
 .notify-toggle {
+  position: relative;
   display: inline-flex; align-items: center; justify-content: center;
   width: 36px; height: 36px; background: transparent; border: none; border-radius: 6px;
   color: #c7d3c4; font-size: 16px; cursor: pointer; transition: background 0.15s, color 0.15s;
@@ -1107,7 +1108,7 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div class="site-search-results" id="site-search-results"></div>
       </div>
     </div>
-    <button type="button" class="notify-toggle" id="notify-toggle" aria-pressed="false" hidden title="Get notified about challenges (and more, soon)">&#128276;</button>
+    <button type="button" class="notify-toggle" id="notify-toggle" aria-pressed="false" hidden title="Get notified about challenges (and more, soon)">&#128276;<span class="tab-alert-dot" id="notify-badge-dot" hidden></span></button>
     <nav class="tabs" aria-label="Site sections">
       <button data-nav="home">Home</button>
       <button data-nav="pickem">Sportsbook</button>
@@ -2870,6 +2871,7 @@ async function loadCatpoints() {
   renderCatpointsChip();
   renderNotifyToggle();
   updateSlipTotal();
+  checkUnseenCatpoints();
   await loadCatpointsWeekly();
   renderHomeStandings();
   renderHomeWeeklyMovers();
@@ -3882,6 +3884,7 @@ function updateMyBetsAlertDot() {
   const hasIncoming = !!currentActingTeamId && (LEAGUE_DATA.bets || [])
     .some(b => b.status === 'pending' && b.teamB === currentActingTeamId && H2H_BET_TYPES.includes(b.type));
   dot.hidden = !hasIncoming;
+  updateNotifyBadge();
 }
 
 function refreshBetViews() {
@@ -3922,7 +3925,11 @@ function mapBetRow(row) {
     teamB: row.team_b || null,
     winnerTeamId: row.winner_team_id || null,
     createdAt: row.created_at ? String(row.created_at).slice(0, 10) : null,
-    acceptedAt: row.accepted_at ? String(row.accepted_at).slice(0, 10) : null,
+    // Kept as a full ISO timestamp (not date-truncated like createdAt/settledAt
+    // above) because updateNotifyBadge() below needs real precision to compare
+    // against a "last seen" timestamp -- nothing else in the UI displays this
+    // field, so there's no formatting reason to truncate it.
+    acceptedAt: row.accepted_at || null,
     settledAt: row.settled_at ? String(row.settled_at).slice(0, 10) : null,
     stake: row.stake != null ? Number(row.stake) : null,
     odds: row.odds != null ? Number(row.odds) : null,
@@ -5507,6 +5514,7 @@ async function unsubscribeFromPush() {
 }
 const notifyToggleBtn = document.getElementById('notify-toggle');
 if (notifyToggleBtn) notifyToggleBtn.addEventListener('click', async () => {
+  markActivitySeen(); // clicking the bell is the one dismissal gesture for the badge below
   const subscribed = await isPushSubscribed();
   if (subscribed) unsubscribeFromPush(); else subscribeToPush();
 });
@@ -5518,6 +5526,62 @@ function sendPushNotification(teamId, { title, body, url, tag }) {
   if (!teamId) return;
   supabaseClient.functions.invoke('send-push', { body: { teamId, title, body, url, tag } })
     .catch(e => console.error('sendPushNotification failed', e));
+}
+
+/* -------- notification bell badge: an in-app red dot that doesn't depend
+   on OS push permission at all --------
+   Aggregates four kinds of "something happened" into one dot on the bell,
+   so it's visible from any page rather than only on the tab that shows the
+   thing directly:
+     1. someone sent you a challenge you haven't answered yet (always shows
+        while it's outstanding -- same unresolved-state check as the My Bets
+        tab's own dot, not gated by "seen")
+     2. a challenge you sent got accepted, and you haven't looked since
+     3. you were credited Catpoints for any reason (bet win, game win, a
+        move, etc.) since you last looked
+     4. you were @mentioned in News since you last looked (mirrors the News
+        tab's own dot)
+   "Seen" is one localStorage timestamp per acting team -- clicking the bell
+   is the single dismissal gesture, clearing all of 2-4 at once; 1 clears
+   itself the moment you accept or decline, same as it always has. */
+function activitySeenKey() { return `catdome_activity_seen_${currentActingTeamId || 'anon'}`; }
+function getLastSeenActivityTime() {
+  try { return localStorage.getItem(activitySeenKey()) || ''; } catch (e) { return ''; }
+}
+function markActivitySeen() {
+  try { localStorage.setItem(activitySeenKey(), new Date().toISOString()); } catch (e) {}
+  updateNotifyBadge();
+}
+// Whether currentActingTeamId has a Catpoints credit newer than lastSeen --
+// requires its own query since nothing else fetches per-team ledger rows;
+// refreshed whenever loadCatpoints() runs (page load, and on every
+// catpoints_balances realtime change).
+let catpointsUnseenCredit = false;
+async function checkUnseenCatpoints() {
+  if (!currentActingTeamId || !supabaseClient) { catpointsUnseenCredit = false; updateNotifyBadge(); return; }
+  const lastSeen = getLastSeenActivityTime();
+  let query = supabaseClient.from('catpoints_ledger').select('id').eq('team_id', currentActingTeamId).gt('delta', 0).limit(1);
+  if (lastSeen) query = query.gt('created_at', lastSeen);
+  const { data, error } = await query;
+  if (error) { console.error('checkUnseenCatpoints failed', error); return; }
+  catpointsUnseenCredit = !!(data && data.length);
+  updateNotifyBadge();
+}
+function updateNotifyBadge() {
+  const dot = document.getElementById('notify-badge-dot');
+  if (!dot) return;
+  if (!currentActingTeamId) { dot.hidden = true; return; }
+  const lastSeen = getLastSeenActivityTime();
+  const hasIncoming = (LEAGUE_DATA.bets || [])
+    .some(b => b.status === 'pending' && b.teamB === currentActingTeamId && H2H_BET_TYPES.includes(b.type));
+  const hasAcceptedUnseen = (LEAGUE_DATA.bets || [])
+    // status check excludes 'pending' (not accepted yet) and 'declined' --
+    // everything else ('open', 'settled', ...) means someone said yes, so this
+    // stays true even if the bet has since graded before you looked.
+    .some(b => b.placedBy === currentActingTeamId && b.acceptedBy && b.acceptedAt && b.status !== 'pending' && b.status !== 'declined' && (!lastSeen || b.acceptedAt > lastSeen));
+  const mentioned = (LEAGUE_DATA.news || [])
+    .some(p => isMentionOf(p, currentActingTeamId) && (!lastSeen || (p.createdAt || '') > lastSeen));
+  dot.hidden = !(hasIncoming || hasAcceptedUnseen || mentioned || catpointsUnseenCredit);
 }
 
 const weeklyMatchupsList = document.getElementById('weekly-matchups-list');
@@ -6251,6 +6315,7 @@ function updateNewsAlertDot() {
   const lastSeen = getLastSeenMentionTime();
   const mentioned = (LEAGUE_DATA.news || []).some(p => isMentionOf(p, currentActingTeamId) && (!lastSeen || (p.createdAt || '') > lastSeen));
   dot.hidden = !mentioned;
+  updateNotifyBadge();
 }
 // Turns "@teamslug" tokens in already-escaped news text into styled, clickable
 // mention spans -- reuses the same [data-nav="team"] delegated click handling
