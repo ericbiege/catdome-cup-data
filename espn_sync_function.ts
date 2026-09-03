@@ -553,7 +553,7 @@ Deno.serve(async (_req) => {
     }
 
     // ---- matchups ----
-    // Same anchor as the site's own SEASON_WEEK1_START (site/index.html) and
+    // Same anchor as the site's own SEASON_WEEK1_START (index.html) and
     // the NFL odds sync function -- keep all three in sync if the season
     // start date ever changes.
     const SEASON_WEEK1_START = new Date("2026-09-09T00:00:00Z");
