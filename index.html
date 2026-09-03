@@ -1724,6 +1724,14 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         </div>
       </div>
 
+      <div class="card bet-builder" id="book-recompute-builder">
+        <div class="desc" style="margin-bottom:10px;">Balances are kept in sync automatically as Catpoints are issued or removed. If one ever looks off, force a full recompute from the ledger.</div>
+        <div class="bet-actions">
+          <button class="btn ghost" type="button" id="book-recompute-submit">Recompute Balances</button>
+          <div class="form-status" id="book-recompute-status"></div>
+        </div>
+      </div>
+
       <div class="yardline" data-label="Needs Your Attention"></div>
       <div class="desc" style="margin-bottom:14px;">Bets the auto-grader can't settle on its own &mdash; waiver, trade, parlay, and futures wagers, plus anything flagged for review.</div>
       <div id="book-settle-list"></div>
@@ -4016,6 +4024,31 @@ async function issueCatpoints(teamId, delta, note) {
     statusEl.textContent = isRemoval
       ? `Removed ${cp(Math.abs(delta))} from ${teamName(teamId)}.`
       : `Issued ${cp(delta)} to ${teamName(teamId)}.`;
+    statusEl.className = 'form-status ok';
+  }
+  await loadCatpoints();
+}
+
+// Safety-net recompute: re-derives every team's catpoints_balances row from
+// scratch as SUM(delta) over catpoints_ledger, via the recompute_all_catpoints_balances()
+// RPC. The ledger trigger already keeps balances in sync on every insert/update/delete,
+// so this should normally be a no-op -- it exists for an admin to force a resync on
+// demand if a balance is ever suspected to have drifted.
+async function recomputeAllCatpointsBalances() {
+  const statusEl = document.getElementById('book-recompute-status');
+  if (statusEl) { statusEl.textContent = 'Recomputing…'; statusEl.className = 'form-status'; }
+  const { data, error } = await supabaseClient.rpc('recompute_all_catpoints_balances');
+  if (error) {
+    console.error('recomputeAllCatpointsBalances failed', error);
+    if (statusEl) { statusEl.textContent = "Couldn't recompute balances -- try again."; statusEl.className = 'form-status err'; }
+    return;
+  }
+  const rows = data || [];
+  const changed = rows.filter(r => Number(r.old_balance) !== Number(r.new_balance));
+  if (statusEl) {
+    statusEl.textContent = changed.length
+      ? `Recomputed ${rows.length} team${rows.length === 1 ? '' : 's'} — fixed ${changed.length}: ${changed.map(r => `${teamName(r.out_team_id)} ${cp(r.old_balance)} → ${cp(r.new_balance)}`).join(', ')}.`
+      : `Recomputed ${rows.length} team${rows.length === 1 ? '' : 's'} — all balances were already correct.`;
     statusEl.className = 'form-status ok';
   }
   await loadCatpoints();
@@ -6601,6 +6634,11 @@ if (bookRemoveSubmitBtn) bookRemoveSubmitBtn.addEventListener('click', () => {
   const statusEl = document.getElementById('book-issue-status');
   if (!teamId || !amount) { if (statusEl) { statusEl.textContent = 'Pick a team and an amount.'; statusEl.className = 'form-status err'; } return; }
   issueCatpoints(teamId, -amount, note);
+});
+const bookRecomputeSubmitBtn = document.getElementById('book-recompute-submit');
+if (bookRecomputeSubmitBtn) bookRecomputeSubmitBtn.addEventListener('click', () => {
+  bookRecomputeSubmitBtn.disabled = true;
+  recomputeAllCatpointsBalances().finally(() => { bookRecomputeSubmitBtn.disabled = false; });
 });
 
 document.addEventListener('click', e => {
