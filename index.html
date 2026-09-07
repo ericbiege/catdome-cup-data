@@ -2544,9 +2544,26 @@ function renderWaiverFuturesBoard(elId) {
 // preferredTeamId (optional) wins over defaultIndex when it's actually in the
 // active-teams list -- used to default "Your Team" selects to the signed-in
 // user's own team (currentActingTeamId) instead of always index 0.
+//
+// If the URL loads straight into #/pickem (e.g. a shared challenge link),
+// showView('pickem') can run once at the bottom of the file before
+// loadProfile() has resolved currentActingTeamId -- that first pass populates
+// the options with defaultIndex selected since preferredTeamId isn't known
+// yet. Rather than gate population itself on auth (which would leave a
+// logged-out visitor looking at empty selects), keep the "only build the
+// <option> list once" guard, but let a *later* call re-apply the preferred
+// team once it's known -- as long as the person hasn't already picked
+// something themselves in the meantime (tracked via dataset.userTouched).
 function populateTeamSelect(id, defaultIndex, preferredTeamId) {
   const sel = document.getElementById(id);
-  if (!sel || sel.options.length) return;
+  if (!sel) return;
+  if (sel.options.length) {
+    if (preferredTeamId && !sel.dataset.userTouched && sel.value !== preferredTeamId
+      && [...sel.options].some(o => o.value === preferredTeamId)) {
+      sel.value = preferredTeamId;
+    }
+    return;
+  }
   const teams = activeTeams();
   const preferredIndex = preferredTeamId ? teams.findIndex(t => t.id === preferredTeamId) : -1;
   teams.forEach((t, i) => {
@@ -2555,6 +2572,7 @@ function populateTeamSelect(id, defaultIndex, preferredTeamId) {
     if (preferredIndex >= 0 ? i === preferredIndex : (defaultIndex != null && i === defaultIndex)) opt.selected = true;
     sel.appendChild(opt);
   });
+  sel.addEventListener('change', () => { sel.dataset.userTouched = '1'; });
 }
 
 const WEEKLY_BET_LABELS = {
@@ -5743,6 +5761,23 @@ function rosterOptionLabel(entry) {
   const proj = entry.projectedPoints != null ? `${entry.projectedPoints.toFixed(1)} proj` : 'no projection yet';
   return `${entry.name} (${posLabel}${proj})`;
 }
+// ESPN's synced `position` isn't always the plain QB/RB/WR/TE/K/D/ST string
+// Position Duel's dropdown uses -- real quarterbacks come through as "TQB",
+// and dual-eligible skill players as "RB/WR" or "WR/TE". Expand a roster
+// row's raw position into every duel position it actually qualifies for,
+// instead of requiring an exact string match (which left the QB duel filter
+// matching nobody, since no rostered player is ever tagged exactly "QB").
+function duelPositionsForEntry(entry) {
+  const raw = String(entry.position || '').toUpperCase();
+  const set = new Set();
+  if (raw.includes('QB')) set.add('QB');
+  if (raw.includes('RB')) set.add('RB');
+  if (raw.includes('WR')) set.add('WR');
+  if (raw.includes('TE')) set.add('TE');
+  if (raw === 'K') set.add('K');
+  if (raw === 'D/ST') set.add('D/ST');
+  return set;
+}
 function populateOpponentPlayerSelect(selectId, teamId, opts) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
@@ -5750,13 +5785,18 @@ function populateOpponentPlayerSelect(selectId, teamId, opts) {
   const position = opts && opts.position;
   let entries = rosterEntriesForTeam(teamId);
   if (position) {
-    entries = entries.filter(e => position === 'FLEX' ? ['RB', 'WR', 'TE'].includes(e.position) : e.position === position);
+    entries = entries.filter(e => {
+      const positions = duelPositionsForEntry(e);
+      return position === 'FLEX' ? (positions.has('RB') || positions.has('WR') || positions.has('TE')) : positions.has(position);
+    });
   }
   entries = entries.slice().sort((a, b) => (b.projectedPoints ?? -1) - (a.projectedPoints ?? -1));
   if (!teamId) {
     sel.innerHTML = '<option value="">Pick a team first&hellip;</option>';
   } else if (!entries.length) {
-    sel.innerHTML = '<option value="">No roster data yet for this team</option>';
+    sel.innerHTML = position
+      ? `<option value="">No ${escapeHtml(position)} on this roster this week</option>`
+      : '<option value="">No roster data yet for this team</option>';
   } else {
     sel.innerHTML = entries.map(e => `<option value="${escapeHtml(e.name)}">${escapeHtml(rosterOptionLabel(e))}</option>`).join('');
   }
