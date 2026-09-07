@@ -5757,7 +5757,7 @@ function rosterEntriesForTeam(teamId) {
 // rostered or not). Population happens on team-b (and, for Position Duel,
 // duel-position) change -- see the change listeners further down.
 function rosterOptionLabel(entry) {
-  const posLabel = entry.position ? `${entry.position} &mdash; ` : '';
+  const posLabel = entry.position ? `${entry.position} — ` : '';
   const proj = entry.projectedPoints != null ? `${entry.projectedPoints.toFixed(1)} proj` : 'no projection yet';
   return `${entry.name} (${posLabel}${proj})`;
 }
