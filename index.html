@@ -1246,35 +1246,6 @@ footer { max-width: 1180px; margin: 0 auto; padding: 24px 20px 60px; color: var(
         <div id="tail-bets-list" class="matchup-list"></div>
       </div>
 
-      <div class="yardline" data-label="Waiver Wire Wizard"></div>
-      <div class="desc" style="margin-bottom:14px;">Stake Catpoints on your free-agent pickup against theirs.</div>
-      <div class="card bet-builder" id="waiver-builder">
-        <div class="row2">
-          <div>
-            <label for="waiver-team-a">Your Team</label>
-            <select id="waiver-team-a"></select>
-          </div>
-          <div>
-            <label for="waiver-player-a">Your Waiver Pickup</label>
-            <div class="ac-wrap"><input type="text" id="waiver-player-a" placeholder="e.g. a free agent RB" autocomplete="off"><div class="ac-menu" hidden></div></div>
-          </div>
-        </div>
-        <div class="row2">
-          <div>
-            <label for="waiver-team-b">Their Team</label>
-            <select id="waiver-team-b"></select>
-          </div>
-          <div>
-            <label for="waiver-player-b">Their Waiver Pickup</label>
-            <div class="ac-wrap"><input type="text" id="waiver-player-b" placeholder="e.g. their free agent WR" autocomplete="off"><div class="ac-menu" hidden></div></div>
-          </div>
-        </div>
-        <div class="bet-actions">
-          <button class="btn" type="button" id="waiver-place">Add to Slip</button>
-          <div class="form-status" id="waiver-status"></div>
-        </div>
-      </div>
-
       <div class="yardline" data-label="More Ways To Bet"></div>
       <div class="idea-grid">
         <div class="card idea-card"><div class="soon">Coming Soon</div><h4>Bust Alert</h4><div class="desc" style="font-size:13px;">Name a start you think busts before kickoff. Right, and you get the receipts forever.</div></div>
@@ -2632,19 +2603,6 @@ function updateParlayPreview() {
   if (previewEl) previewEl.textContent = buildParlayText();
 }
 
-function buildWaiverText() {
-  const teamA = teamName(document.getElementById('waiver-team-a').value);
-  const teamB = teamName(document.getElementById('waiver-team-b').value);
-  const playerA = document.getElementById('waiver-player-a').value.trim() || '(your pickup)';
-  const playerB = document.getElementById('waiver-player-b').value.trim() || '(their pickup)';
-  const week = currentLeagueWeek();
-  return `\u{1F9D9} CATDOME CUP WAIVER WIRE WIZARD \u{1F9D9}\nWeek ${week}: ${teamA}'s add ${playerA} vs ${teamB}'s add ${playerB}\nWhoever's free-agent pickup scores more fantasy points this week wins the bet.\n— sent from Catdome Cup Pick 'Em`;
-}
-function updateWaiverPreview() {
-  const el = document.getElementById('waiver-preview');
-  if (el) el.textContent = buildWaiverText();
-}
-
 const TRADE_CALL_LABELS = { yes: 'DOES happen', no: 'does NOT happen' };
 function buildTradeText() {
   const teamA = teamName(document.getElementById('trade-team-a').value);
@@ -2967,6 +2925,7 @@ function renderSlip() {
   syncWeeklyChipSelection();
   syncNflChipSelection();
   syncAllPropChipSelection();
+  syncAllLaPropChipSelection();
   countEl.textContent = String(slip.length);
   tray.classList.toggle('has-picks', slip.length > 0);
   if (slip.length < 2) slipParlayMode = false;
@@ -3175,7 +3134,10 @@ async function placeSlip() {
 // combo parlay (type 'parlay', no teamB) built entirely from NFL legs or
 // entirely from futures legs inherits that tab too (see placeSlipParlay,
 // which stashes that in `market`); everything else (Catdome Game Lines,
-// Waiver Wire Wizard, mixed-leg combo parlays) falls back to "League Bets".
+// mixed-leg combo parlays) falls back to "League Bets". Note that League
+// Action player props (TD Scorers/Passing/Receiving/Rushing) are typed
+// 'nfl_prop' too, same as NFL Player Props -- see laPropItemFromId -- so
+// they land under "NFL Lines" here, not "League Bets".
 function betCategoryOf(b) {
   if (b.type === 'futures' || b.type === 'trade') return 'futures';
   if (b.type === 'nfl' || b.type === 'nfl_prop') return 'nfl';
@@ -4480,8 +4442,6 @@ function renderPickEm() {
   populateTeamSelect('prop-team-b', 1);
   populateTeamSelect('parlay-team-a', 0);
   populateTeamSelect('parlay-team-b', 1);
-  populateTeamSelect('waiver-team-a', 0);
-  populateTeamSelect('waiver-team-b', 1);
   populateTeamSelect('trade-team-a', 0);
   populateTeamSelect('trade-team-b', 1);
   populateTeamSelect('bench-team-a', 0);
@@ -4496,7 +4456,6 @@ function renderPickEm() {
   updatePropPreview();
   updateParlayLegButtons();
   updateParlayPreview();
-  updateWaiverPreview();
   updateTradePreview();
   updateBenchPreview();
   updateShootoutPreview();
@@ -5201,7 +5160,7 @@ function unlockApp() {
 }
 
 async function bootApp() {
-  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadNewsPosts(), loadTeamLogos(), loadPassTheLeg()]);
+  await Promise.all([loadBets(), loadRecaps(), loadCatpoints(), loadWeeklyMatchups(), loadNflGames(), loadNflProps(), loadCurrentRosters(), loadNewsPosts(), loadTeamLogos(), loadPassTheLeg()]);
   // loadNewsPosts() (and setUserBadge(), called earlier from unlockApp()) can
   // resolve/run before loadTeamLogos() does, since they load in parallel above --
   // re-render both now that TEAM_LOGO_URL is guaranteed populated, so avatars
@@ -5214,6 +5173,7 @@ async function bootApp() {
   subscribeWeeklyMatchups();
   subscribeNflGames();
   subscribeNflProps();
+  subscribeCurrentRosters();
   subscribeNewsPosts();
   subscribePassTheLeg();
   navigate(window.location.hash);
@@ -5488,29 +5448,134 @@ if (myBetsStatusBar) myBetsStatusBar.addEventListener('click', e => {
 });
 
 // League Action fantasy props: TD Scorers / Passing / Receiving / Running for this
-// week's 5 fantasy matchups. Pre-draft there's no roster data to grade against, so
-// every category renders a "not yet" empty state -- but the toggle/render plumbing
-// below is built to match renderPropCategory()/PROP_MARKET_DEFS exactly, so once
-// rosters exist (post-draft) this just needs LEAGUE_DATA.leagueActionProps populated
-// from a synced table (same shape as nfl_player_props, keyed to a fantasy matchup
-// instead of an NFL game) and it renders identically to NFL Game Lines.
+// week's 5 fantasy matchups. Rather than a separate synced odds table (there's no
+// real book that prices "fantasy team" player props), this reuses the exact same
+// real, already-synced NFL_PROPS rows that power NFL Player Props -- a rostered
+// player's real Anytime TD odds ARE their League Action Anytime TD odds -- and
+// regroups them by which of this week's 5 fantasy matchups (WEEKLY_MATCHUPS) the
+// player's *current* roster (CURRENT_ROSTERS, see below) puts them in, instead of
+// by real NFL game. Betting one of these chips creates the same `nfl_prop`-typed
+// slip item as NFL Player Props, so it settles through the exact same
+// nfl-props-grade Edge Function -- no new grading logic needed. Since the board
+// only ever draws chips from rostered players, there's no separate "only pick
+// players on their roster" restriction to enforce -- a player who isn't rostered
+// this week simply never gets a chip.
 const LA_PROP_VIEW = { td: 'anytime_td', passing: 'pass_yds', receiving: 'reception_yds', rushing: 'rush_yds' };
 const LA_PROP_LABELS = { td: 'TD Scorers', passing: 'Passing', receiving: 'Receiving', rushing: 'Running' };
 const LA_SUBPANEL_LIST_ID = { td: 'la-props-td-list', passing: 'la-props-passing-list', receiving: 'la-props-receiving-list', rushing: 'la-props-rushing-list' };
 
+function laPropItemFromId(propId, teamAId, teamBId) {
+  const prop = NFL_PROPS.find(p => p.id === propId);
+  if (!prop) return null;
+  const def = PROP_MARKET_DEFS[prop.market] || { kind: 'threshold', betLabel: prop.market };
+  const marketLabel = def.kind === 'single'
+    ? `${prop.player_name} ${def.betLabel}`
+    : `${prop.player_name} ${prop.side === 'under' ? 'Under' : 'Over'} ${prop.line} ${def.betLabel}`;
+  const marketKey = def.kind === 'single' ? prop.market : `${prop.market}_${prop.side}`;
+  const matchupLabel = `${teamName(teamAId)} vs ${teamName(teamBId)}`;
+  return {
+    type: 'nfl_prop',
+    summary: `${marketLabel} &mdash; ${matchupLabel}, Week ${prop.week} (League Action)`,
+    text: `\u{1F3C8} CATDOME CUP LEAGUE ACTION \u{1F3C8}\n${matchupLabel} &mdash; Week ${prop.week}\nBet: ${marketLabel}\n— sent from Catdome Cup Sportsbook`,
+    playerA: prop.player_name, week: prop.week, market: marketKey,
+    threshold: def.kind === 'single' ? null : Number(prop.line),
+    odds: Number(prop.price) || HOUSE_ODDS,
+  };
+}
+
 function renderLaPropCategory(category) {
   const wrap = document.getElementById(LA_SUBPANEL_LIST_ID[category]);
   if (!wrap) return;
-  const rows = (LEAGUE_DATA.leagueActionProps || []).filter(p => p.market === LA_PROP_VIEW[category]);
-  if (!rows.length) {
-    wrap.innerHTML = `<div class="matchup-empty">${LA_PROP_LABELS[category]} lines open once rosters are set after the draft &mdash; then this mirrors NFL Game Lines exactly, powered by the same weekly ESPN sync.</div>`;
+  const label = LA_PROP_LABELS[category];
+  if (!WEEKLY_MATCHUPS.length) {
+    wrap.innerHTML = `<div class="prop-empty">${label} lines open once this week's fantasy matchups are posted.</div>`;
     return;
   }
-  // Post-draft: reuse propItemFromId()/renderPropCategory()'s card markup once
-  // leagueActionProps rows exist -- left as a stub since nothing populates
-  // LEAGUE_DATA.leagueActionProps yet.
+  if (!CURRENT_ROSTERS_BY_TEAM.size) {
+    wrap.innerHTML = `<div class="prop-empty">${label} lines open once rosters sync for the week.</div>`;
+    return;
+  }
+  const view = LA_PROP_VIEW[category];
+  const isOU = view.endsWith('_ou');
+  const market = isOU ? view.slice(0, -3) : view;
+  const def = PROP_MARKET_DEFS[market];
+  const rows = NFL_PROPS.filter(p => p.market === market);
+  if (!rows.length) {
+    wrap.innerHTML = `<div class="prop-empty">${label} odds aren&rsquo;t synced yet &mdash; check back once this week&rsquo;s props are posted.</div>`;
+    return;
+  }
+  const cards = WEEKLY_MATCHUPS.map(g => {
+    const locked = !!(g.status && g.status !== 'STATUS_SCHEDULED');
+    const teamAPlayers = rosterPlayerNamesForTeam(g.teamA);
+    const teamBPlayers = rosterPlayerNamesForTeam(g.teamB);
+    const ownerOf = name => teamAPlayers.has(name.toLowerCase()) ? g.teamA : teamBPlayers.has(name.toLowerCase()) ? g.teamB : null;
+    const relevant = rows.filter(p => ownerOf(p.player_name));
+    if (!relevant.length) return '';
+    const byPlayer = new Map();
+    for (const p of relevant) { if (!byPlayer.has(p.player_name)) byPlayer.set(p.player_name, []); byPlayer.get(p.player_name).push(p); }
+    const playerRows = [...byPlayer.entries()].map(([player, playerProps]) => {
+      let chips = '';
+      if (def && def.kind === 'single') {
+        chips = playerProps.map(p => propChipHtml(p, def.tabLabel, locked)).join('');
+      } else if (isOU) {
+        const byLine = new Map();
+        for (const p of playerProps) {
+          const key = String(p.line);
+          if (!byLine.has(key)) byLine.set(key, {});
+          byLine.get(key)[p.side] = p;
+        }
+        const paired = [...byLine.values()].find(sides => sides.over && sides.under);
+        if (paired) chips = propChipHtml(paired.over, `O ${paired.over.line}`, locked) + propChipHtml(paired.under, `U ${paired.under.line}`, locked);
+      } else {
+        const overs = playerProps.filter(p => p.side === 'over').sort((a, b) => a.line - b.line).slice(0, 3);
+        chips = overs.map(p => propChipHtml(p, `${Math.ceil(p.line)}+`, locked)).join('');
+      }
+      if (!chips) return '';
+      const ownerName = teamName(ownerOf(player));
+      return `<div class="prop-player-row"><div class="prop-player-name">${player} <span style="color:var(--ink-dim);font-weight:400;">(${ownerName})</span></div><div class="prop-chip-row">${chips}</div></div>`;
+    }).filter(Boolean).join('');
+    if (!playerRows) return '';
+    const statusLabel = locked ? ` &middot; ${MATCHUP_STATUS_LABELS[g.status] || 'Locked'}` : '';
+    return `<div class="prop-card" data-team-a="${g.teamA}" data-team-b="${g.teamB}"><div class="prop-card-head">${teamName(g.teamA)} vs ${teamName(g.teamB)}${statusLabel}</div>${playerRows}</div>`;
+  }).filter(Boolean).join('');
+  wrap.innerHTML = cards || `<div class="prop-empty">No rostered player has a ${label} line yet this week.</div>`;
+  syncLaPropChipSelection(LA_SUBPANEL_LIST_ID[category]);
 }
-Object.keys(LA_PROP_VIEW).forEach(renderLaPropCategory);
+function renderLaProps() { Object.keys(LA_PROP_VIEW).forEach(renderLaPropCategory); }
+
+function syncLaPropChipSelection(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  wrap.querySelectorAll('.prop-card').forEach(card => {
+    const teamAId = card.dataset.teamA, teamBId = card.dataset.teamB;
+    card.querySelectorAll('.prop-chip').forEach(chip => {
+      const item = laPropItemFromId(chip.dataset.propId, teamAId, teamBId);
+      if (!item) return;
+      const key = slipItemKey(item);
+      chip.classList.toggle('selected', slip.some(i => slipItemKey(i) === key));
+    });
+  });
+}
+function syncAllLaPropChipSelection() {
+  Object.values(LA_SUBPANEL_LIST_ID).forEach(syncLaPropChipSelection);
+}
+Object.values(LA_SUBPANEL_LIST_ID).forEach(id => {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  wrap.addEventListener('click', e => {
+    const chip = e.target.closest('.prop-chip');
+    if (!chip || chip.disabled) return;
+    const card = chip.closest('.prop-card');
+    if (!card) return;
+    const item = laPropItemFromId(chip.dataset.propId, card.dataset.teamA, card.dataset.teamB);
+    if (!item) return;
+    const key = slipItemKey(item);
+    const existing = slip.find(i => slipItemKey(i) === key);
+    if (existing) { removeFromSlip(existing.localId); return; }
+    if (!requireActingTeam(null)) { showToast('Sign in and pick your team first.'); return; }
+    addToSlip(item);
+  });
+});
 
 document.querySelectorAll('.la-prop-type-toggle').forEach(toggle => {
   toggle.addEventListener('click', e => {
@@ -5545,11 +5610,52 @@ async function loadWeeklyMatchups() {
   });
   WEEKLY_MATCHUPS = games;
   renderWeeklyMatchups();
+  renderLaProps();
 }
 function subscribeWeeklyMatchups() {
   supabaseClient.channel('weekly-matchups-changes')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'weekly_matchups' }, () => { loadWeeklyMatchups(); })
     .subscribe();
+}
+
+// ---- Current rosters: live per-team, per-week roster --------------------
+// Used to figure out which fantasy team a real NFL player currently belongs
+// to, so League Action props (below) can attribute a real player's synced
+// NFL_PROPS rows to the right side of this week's fantasy matchup -- that's
+// also what keeps the board honest to "only rostered players get a line":
+// a player who isn't on anyone's current roster this week just never
+// resolves to a fantasy team and never gets a chip. Before the weekly ESPN
+// sync has run for a given week (e.g. right after the draft, before Week 1
+// kicks off) the `rosters` table can be empty, so this falls back to the
+// static post-draft snapshot already embedded in
+// LEAGUE_DATA.seasons[currentSeason].rosters so the board still works.
+let CURRENT_ROSTERS_BY_TEAM = new Map(); // teamId -> Set of lowercased player names
+async function loadCurrentRosters() {
+  const week = currentLeagueWeek();
+  const { data, error } = await supabaseClient.from('rosters').select('team_id, player_name')
+    .eq('year', LEAGUE_DATA.league.currentSeason).eq('week', week);
+  if (error) { console.error('loadCurrentRosters failed', error); return; }
+  const byTeam = new Map();
+  for (const row of data || []) {
+    if (!byTeam.has(row.team_id)) byTeam.set(row.team_id, new Set());
+    byTeam.get(row.team_id).add(String(row.player_name || '').toLowerCase());
+  }
+  if (!byTeam.size) {
+    const season = LEAGUE_DATA.seasons.find(s => s.year === LEAGUE_DATA.league.currentSeason);
+    for (const [teamId, players] of Object.entries((season && season.rosters) || {})) {
+      byTeam.set(teamId, new Set((players || []).map(p => String(p.name || '').toLowerCase())));
+    }
+  }
+  CURRENT_ROSTERS_BY_TEAM = byTeam;
+  renderLaProps();
+}
+function subscribeCurrentRosters() {
+  supabaseClient.channel('rosters-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'rosters' }, () => { loadCurrentRosters(); })
+    .subscribe();
+}
+function rosterPlayerNamesForTeam(teamId) {
+  return CURRENT_ROSTERS_BY_TEAM.get(teamId) || new Set();
 }
 
 function weeklyMatchupSummary(market, backTeamId, oppTeamId, week) {
@@ -6156,6 +6262,7 @@ async function loadNflProps() {
   NFL_PROPS = data || [];
   renderNflProps();
   renderLiveTracker();
+  renderLaProps();
 }
 function subscribeNflProps() {
   supabaseClient.channel('nfl-props-changes')
@@ -6311,8 +6418,6 @@ Object.values(PROP_WRAP_IDS).forEach(id => {
 
 attachPlayerAutocomplete(document.getElementById('prop-player-a'), { withTeam: false });
 attachPlayerAutocomplete(document.getElementById('prop-player-b'), { withTeam: false });
-attachPlayerAutocomplete(document.getElementById('waiver-player-a'), { withTeam: false });
-attachPlayerAutocomplete(document.getElementById('waiver-player-b'), { withTeam: false });
 attachPlayerAutocomplete(document.getElementById('duel-player-a'), { withTeam: false });
 attachPlayerAutocomplete(document.getElementById('duel-player-b'), { withTeam: false });
 document.querySelectorAll('#parlay-legs .parlay-player').forEach(i => attachPlayerAutocomplete(i, { withTeam: true }));
@@ -6406,28 +6511,6 @@ if (parlayPlaceBtn) parlayPlaceBtn.addEventListener('click', () => {
     summary: `${parlayN}-leg TD Parlay Duel vs ${teamName(parlayTeamB)}, Week ${parlayWk} &mdash; ${parlayLegs().join(', ')}`,
     text: buildParlayText(),
     teamA: parlayTeamA, teamB: parlayTeamB, week: parlayWk,
-  });
-  statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
-});
-
-['waiver-team-a', 'waiver-team-b', 'waiver-player-a', 'waiver-player-b'].forEach(id => {
-  const elx = document.getElementById(id);
-  if (elx) elx.addEventListener('input', updateWaiverPreview);
-});
-const waiverPlaceBtn = document.getElementById('waiver-place');
-if (waiverPlaceBtn) waiverPlaceBtn.addEventListener('click', () => {
-  const statusEl = document.getElementById('waiver-status');
-  const pa = document.getElementById('waiver-player-a').value.trim(), pb = document.getElementById('waiver-player-b').value.trim();
-  if (!pa || !pb) { statusEl.textContent = 'Add both waiver pickups first.'; statusEl.className = 'form-status err'; return; }
-  if (!requireActingTeam(statusEl)) return;
-  const waiverWeek = currentLeagueWeek();
-  const waiverTeamA = document.getElementById('waiver-team-a').value, waiverTeamB = document.getElementById('waiver-team-b').value;
-  const waiverA = teamName(waiverTeamA), waiverB = teamName(waiverTeamB);
-  addToSlip({
-    type: 'waiver',
-    summary: `${waiverA}'s ${pa} vs ${waiverB}'s ${pb} &mdash; Waiver Wire Wizard, Week ${waiverWeek}`,
-    text: buildWaiverText(),
-    teamA: waiverTeamA, teamB: waiverTeamB, week: waiverWeek, playerA: pa, playerB: pb,
   });
   statusEl.textContent = 'Added to your bet slip below.'; statusEl.className = 'form-status ok';
 });
